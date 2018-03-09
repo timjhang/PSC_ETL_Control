@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
+    <wb-module deploy-name="PSC_ETL_Control">
+        <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
+        <property name="context-root" value="PSC_ETL_Control"/>
+        <property name="java-output-path" value="/PSC_ETL_Control/build/classes"/>
+    </wb-module>
+</project-modules>
