@@ -30,6 +30,7 @@ public class ETL_Tool_CastObjUtil {
 			} else {
 
 				objs[i] = clazz.cast(PropertyUtils.getProperty(javaBean, field.getName()));
+		
 			}
 		}
 		return objs;

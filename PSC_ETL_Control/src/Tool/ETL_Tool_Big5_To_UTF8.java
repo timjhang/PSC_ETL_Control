@@ -2,11 +2,11 @@ package Tool;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,10 +66,7 @@ public class ETL_Tool_Big5_To_UTF8 {
 	 * @return 轉換後的UTF-8字串
 	 * @throws IOException
 	 */
-	public String format(byte[] stream, Map<String, Map<String, String>> difficultWordMaps) throws IOException {
-
-		// 拿到來源字碼
-		String code = byteArrayToHexStr(stream);
+	public static String format(byte[] stream, Map<String, Map<String, String>> difficultWordMaps) throws IOException {
 
 		// 拿到Big自訂字碼與Unicode自訂字碼的Map
 		Map<String, String> pp_map = difficultWordMaps.get("pp_map");
@@ -77,37 +74,47 @@ public class ETL_Tool_Big5_To_UTF8 {
 		// 拿到Big自訂字碼與Unicode系統字碼的Map
 		Map<String, String> ps_map = difficultWordMaps.get("ps_map");
 
+		int prevIndex = -1;
+		int size = stream.length;
+
 		StringBuffer sBuffer = new StringBuffer();
 
-		int count = 0;
+		for (int i = 0; i < size; i++) {
 
-		for (int i = 0; i < code.length(); i += 4) {
-			String tmp = code.substring(i, i + 4);
-			// logger.debug("進行解析，目前字碼: {}", tmp);
+			if (i != 0 && i < size) {
+				byte[] b = { stream[prevIndex], stream[i] };
 
-			boolean b = isBig5DifficultWord(tmp);
-			// logger.debug("是否為造字區造字: {}", b ? "是" : "不是");
+				String code = byteArrayToHexStr(b);
+				
+				boolean isBig5Code = isBig5Code(code);
+				boolean isBig5DifficultWord = isBig5DifficultWord(code);
 
-			if (b) {
-				// 首先查找UniCode系統字區
-				String mapped_code = ps_map.get(tmp);
+				i += isBig5Code | isBig5DifficultWord ? 1 : 0;
 
-				// 判斷系統字區是否有對應的字碼
-				if (mapped_code == null || "".equals(mapped_code.trim())) {
+				if (isBig5DifficultWord) {
+					// 查找UniCode系統字區
+					String mapped_code = ps_map.get(code);
 
-					// 查找UniCode造字區
-					mapped_code = pp_map.get(tmp);
+					// 判斷系統字區是否有對應的字碼
+					if (mapped_code == null || "".equals(mapped_code.trim())) {
 
-					// 判斷造字區是否有對應的字碼，假如沒有，則回傳特殊字碼
-					mapped_code = (mapped_code == null || "".equals(mapped_code.trim())) ? "25a1" : mapped_code;
+						// 查找UniCode造字區
+						mapped_code = pp_map.get(code);
 
+						// 判斷造字區是否有對應的字碼，假如沒有，則回傳特殊字碼 □
+						mapped_code = (mapped_code == null || "".equals(mapped_code.trim())) ? "25a1" : mapped_code;
+
+					}
+					sBuffer.append(UTF_8(mapped_code));
+				} else if (isBig5Code) {
+					sBuffer.append(new String(b, "big5"));
+				} else {
+					sBuffer.append(new String(b, 0, 1));
 				}
-				sBuffer.append(UTF_8(mapped_code));
-			} else {
-				sBuffer.append(new String(Arrays.copyOfRange(stream, count, count + 2), "big5"));
 			}
-			count += 2;
+			prevIndex = i;
 		}
+
 		return sBuffer.toString();
 	}
 
@@ -119,7 +126,7 @@ public class ETL_Tool_Big5_To_UTF8 {
 	 * @return 相對應的文字，型態為UTF-8
 	 * @throws UnsupportedEncodingException
 	 */
-	private String UTF_8(String unicode) throws UnsupportedEncodingException {
+	private static String UTF_8(String unicode) throws UnsupportedEncodingException {
 		String unicodeStr = "";
 		int hexVal = Integer.parseInt(unicode, 16);
 		unicodeStr += (char) hexVal;
@@ -153,41 +160,36 @@ public class ETL_Tool_Big5_To_UTF8 {
 
 		Map<String, String> map = new HashMap<String, String>();
 
-//		try {
-			String XLSXPath = getXLSXPath(central_no);
+		// try {
+		String XLSXPath = getXLSXPath(central_no);
 
-			FileInputStream excelFile = new FileInputStream(new File(XLSXPath));
+		FileInputStream excelFile = new FileInputStream(new File(XLSXPath));
 
-			@SuppressWarnings("resource")
-			Workbook workbook = new XSSFWorkbook(excelFile);
+		@SuppressWarnings("resource")
+		Workbook workbook = new XSSFWorkbook(excelFile);
 
-			// 取出第一個工作表
-			Sheet datatypeSheet = workbook.getSheetAt(0);
+		// 取出第一個工作表
+		Sheet datatypeSheet = workbook.getSheetAt(0);
 
-			for (int i = 1; i <= datatypeSheet.getLastRowNum(); i++) {
+		for (int i = 1; i <= datatypeSheet.getLastRowNum(); i++) {
 
-				Row currentRow = datatypeSheet.getRow(i);
+			Row currentRow = datatypeSheet.getRow(i);
 
-				// 為空，不處理
-				if (currentRow == null) {
-					continue;
-				}
-
-				// Big5造字區
-				Cell big5_cell = currentRow.getCell(1);
-
-				if (big5_cell != null) {
-					// UniCode系統字區
-					Cell uniCode_cell = currentRow.getCell(3);
-					String uniCode_cell_val = uniCode_cell == null ? null : uniCode_cell.getStringCellValue();
-					map.put(big5_cell.getStringCellValue(), uniCode_cell_val);
-				}
+			// 為空，不處理
+			if (currentRow == null) {
+				continue;
 			}
-//		} catch (FileNotFoundException e) {
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
+
+			// Big5造字區
+			Cell big5_cell = currentRow.getCell(1);
+
+			if (big5_cell != null) {
+				// UniCode系統字區
+				Cell uniCode_cell = currentRow.getCell(3);
+				String uniCode_cell_val = uniCode_cell == null ? null : uniCode_cell.getStringCellValue();
+				map.put(big5_cell.getStringCellValue(), uniCode_cell_val);
+			}
+		}
 		return map;
 	}
 
@@ -203,41 +205,36 @@ public class ETL_Tool_Big5_To_UTF8 {
 
 		Map<String, String> map = new HashMap<String, String>();
 
-//		try {
-			String XLSXPath = getXLSXPath(central_no);
+		// try {
+		String XLSXPath = getXLSXPath(central_no);
 
-			FileInputStream excelFile = new FileInputStream(new File(XLSXPath));
+		FileInputStream excelFile = new FileInputStream(new File(XLSXPath));
 
-			@SuppressWarnings("resource")
-			Workbook workbook = new XSSFWorkbook(excelFile);
+		@SuppressWarnings("resource")
+		Workbook workbook = new XSSFWorkbook(excelFile);
 
-			// 取出第一個工作表
-			Sheet datatypeSheet = workbook.getSheetAt(0);
+		// 取出第一個工作表
+		Sheet datatypeSheet = workbook.getSheetAt(0);
 
-			for (int i = 1; i <= datatypeSheet.getLastRowNum(); i++) {
+		for (int i = 1; i <= datatypeSheet.getLastRowNum(); i++) {
 
-				Row currentRow = datatypeSheet.getRow(i);
+			Row currentRow = datatypeSheet.getRow(i);
 
-				// 為空，不處理
-				if (currentRow == null) {
-					continue;
-				}
-
-				// Big5造字區
-				Cell big5_cell = currentRow.getCell(1);
-
-				if (big5_cell != null) {
-					// UniCode造字區
-					Cell uniCode_cell = currentRow.getCell(2);
-					String uniCode_cell_val = uniCode_cell == null ? null : uniCode_cell.getStringCellValue();
-					map.put(big5_cell.getStringCellValue(), uniCode_cell_val);
-				}
+			// 為空，不處理
+			if (currentRow == null) {
+				continue;
 			}
-//		} catch (FileNotFoundException e) {
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
+
+			// Big5造字區
+			Cell big5_cell = currentRow.getCell(1);
+
+			if (big5_cell != null) {
+				// UniCode造字區
+				Cell uniCode_cell = currentRow.getCell(2);
+				String uniCode_cell_val = uniCode_cell == null ? null : uniCode_cell.getStringCellValue();
+				map.put(big5_cell.getStringCellValue(), uniCode_cell_val);
+			}
+		}
 		return map;
 	}
 
@@ -248,7 +245,7 @@ public class ETL_Tool_Big5_To_UTF8 {
 	 *            來源陣列
 	 * @return 16進位字串
 	 */
-	private String byteArrayToHexStr(byte[] byteArray) {
+	private static String byteArrayToHexStr(byte[] byteArray) {
 		if (byteArray == null) {
 			return null;
 		}
@@ -270,9 +267,9 @@ public class ETL_Tool_Big5_To_UTF8 {
 	 * @return trur 存在 / false 不存在
 	 */
 	/*
-	 * 造字範圍 字數 FA40-FEFE 785 8E40-A0FE 2983 8140-8DFE 2041
+	 * 造字範圍 字數 FA40-FEFE, 8E40-A0FE, 8140-8DFE, C6A1-C8FE
 	 */
-	private boolean isBig5DifficultWord(String code) {
+	private static boolean isBig5DifficultWord(String code) {
 		boolean is = false;
 
 		try {
@@ -287,14 +284,87 @@ public class ETL_Tool_Big5_To_UTF8 {
 			int range_3_start = Integer.parseInt("8140", 16);
 			int range_3_end = Integer.parseInt("8DFE", 16);
 
+			int range_4_start = Integer.parseInt("C6A1", 16);
+			int range_4_end = Integer.parseInt("C8FE", 16);
+
 			if (((range_1_start <= decimal) && (decimal <= range_1_end))
 					| ((range_2_start <= decimal) && (decimal <= range_2_end))
-					| ((range_3_start <= decimal) && (decimal <= range_3_end)))
+					| ((range_3_start <= decimal) && (decimal <= range_3_end))
+					| ((range_4_start <= decimal) && (decimal <= range_4_end)))
 				is = true;
 		} catch (Exception e) {
 			return is;
 		}
 
 		return is;
+	}
+
+	/**
+	 * 判斷字碼是否存在於Big5中
+	 * 
+	 * @param code
+	 *            HEX字碼
+	 * @return
+	 */
+	private static boolean isBig5Code(String code) {
+		boolean is = false;
+
+		if (!ETL_Tool_FormatCheck.isEmpty(code) && code.length() == 4) {
+
+			char code_1, code_2, code_3, code_4;
+			code_1 = code.charAt(0);
+			code_2 = code.charAt(1);
+			code_3 = code.charAt(2);
+			code_4 = code.charAt(3);
+
+			if ('A' == code_1 || 'B' == code_1 || 'C' == code_1 || 'D' == code_1 || 'E' == code_1 || 'F' == code_1) {
+
+				if ((('A' == code_1) && ('1' == code_2 || '2' == code_2 || '3' == code_2 || '4' == code_2
+						|| '5' == code_2 || '6' == code_2 || '7' == code_2 || '8' == code_2 || '9' == code_2
+						|| '9' == code_2 || 'A' == code_2 || 'B' == code_2 || 'C' == code_2 || 'D' == code_2
+						|| 'E' == code_2 || 'F' == code_2))
+
+						||
+
+						(('F' == code_1) && ('0' == code_2 || '1' == code_2 || '2' == code_2 || '3' == code_2
+								|| '4' == code_2 || '5' == code_2 || '6' == code_2 || '7' == code_2 || '8' == code_2
+								|| '9' == code_2))
+
+						||
+
+						(('A' != code_1) && ('F' != code_1)
+								&& ('0' == code_2 || '1' == code_2 || '2' == code_2 || '3' == code_2 || '4' == code_2
+										|| '5' == code_2 || '6' == code_2 || '7' == code_2 || '8' == code_2
+										|| '9' == code_2 || 'A' == code_2 || 'B' == code_2 || 'C' == code_2
+										|| 'D' == code_2 || 'E' == code_2 || 'F' == code_2))
+
+				) {
+
+					if ('4' == code_3 || '5' == code_3 || '6' == code_3 || '7' == code_3 || 'A' == code_3
+							|| 'B' == code_3 || 'C' == code_3 || 'D' == code_3 || 'E' == code_3 || 'F' == code_3) {
+
+						if ('0' == code_4 || '1' == code_4 || '2' == code_4 || '3' == code_4 || '4' == code_4
+								|| '5' == code_4 || '6' == code_4 || '7' == code_4 || '8' == code_4 || '9' == code_4
+								|| '9' == code_4 || 'A' == code_4 || 'B' == code_4 || 'C' == code_4 || 'D' == code_4
+								|| 'E' == code_4 || 'F' == code_4
+
+						) {
+							is = true;
+						}
+					}
+
+				}
+			}
+		}
+		return is;
+	}
+
+	public static void main(String[] args) throws Exception {
+		ETL_Tool_Big5_To_UTF8 test = new ETL_Tool_Big5_To_UTF8("D:/PSC/Projects/AgriBank/難字/難字轉換表/%s.xlsx");
+		Map<String, Map<String, String>> difficultWordMaps = test.getDifficultWordMaps("952");
+
+		byte[] bytes = Files.readAllBytes(Paths.get("D:\\PSC\\Projects\\AgriBank\\UNIT_TEST\\600_R_TRANSACTION_20171206.TXT"));
+		
+		System.out.println(ETL_Tool_Big5_To_UTF8.format(bytes, difficultWordMaps));
 	}
 }

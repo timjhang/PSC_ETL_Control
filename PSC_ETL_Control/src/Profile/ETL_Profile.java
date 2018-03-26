@@ -14,29 +14,13 @@ public class ETL_Profile {
 	
 	// Driver, Url, User, Password
 	public final static String db2Driver = "com.ibm.db2.jcc.DB2Driver";
-//	private final static String db2SPSchema = "ADMINISTRATOR";
-//	public final static String db2TableSchema = "ADMINISTRATOR";
-//	private final static String db2SPSchema = "SRC";
-//	public final static String db2TableSchema = "SRC";
-//	public final static String db2Url = 
-//			"jdbc:db2://172.18.21.206:50000/ETLDB600:" +
-//			"currentschema=" + db2SPSchema + ";" +
-//			"currentFunctionPath=" + db2SPSchema + ";";
-//	public final static String db2User = "Administrator";
-//	public final static String db2Password = "9ol.)P:?";
-//	public final static String db2Url = 
-//			"jdbc:db2://localhost:50000/sample:" +
-//			"currentschema=" + db2SPSchema + ";" +
-//			"currentFunctionPath=" + db2SPSchema + ";";
-//	public final static String db2User = "administrator";
-//	public final static String db2Password = "1qaz@WSX";
-	
+
+	// 控制程式 & L系列程式, 連線用版本
 	private final static String db2SPSchema = "SRC";
 	public final static String db2TableSchema = "SRC";
 	public final static String db2Ip = "172.18.6.133";
 	public final static String db2port = "50000";
 
-	// GAMLDB
 	public final static String db2Url = 
 			"jdbc:db2://" + db2Ip + ":" + db2port + "/GAMLDB:" + "currentschema="
 			+ db2SPSchema + ";" + "currentFunctionPath=" + db2SPSchema + ";";
@@ -44,13 +28,17 @@ public class ETL_Profile {
 	public final static String db2User = "GAMLETL";
 	public final static String db2Password = "1qaz@WSX";
 	
-//	public final static String db2Url =
-//			"jdbc:db2://localhost:50000/SAMPLE:"+
-//			"currentschema=" + db2SPSchema + ";" +
-//			"currentFunctionPath=" + db2SPSchema + ";";
-//	
-//	public final static String db2User = "tibyby";
-//	public final static String db2Password = "Nn125303960";
+	
+	// 連線GAML用URL string(Web Service系列程式, 連線用版本)
+	public final static String GAML_db2User = "GAMLETL";
+	public final static String GAML_db2Password = "1qaz@WSX";
+	public final static String GAML_db2TableSchema = "SRC";
+	private final static String GAML_db2SPSchema = "SRC";
+	public final static String db2UrlGAMLpre = "jdbc:db2://172.18.6.133:50000/GAML";
+	public final static String db2UrlGAMLafter = 
+			":currentschema=" + GAML_db2SPSchema + ";" +
+			"currentFunctionPath=" + GAML_db2SPSchema + ";";
+	
 	
 	// Error Log寫入域值
 	public final static int ErrorLog_Stage = 10000;
@@ -91,5 +79,26 @@ public class ETL_Profile {
 //				+ "currentFunctionPath=" + db2SPSchema + ";";
 //		return db2url;
 //	}
+	
+	// 各資料讀檔緩衝區大小
+	public final static int ETL_E_PARTY = 310;
+	public final static int ETL_E_PARTY_PARTY_REL = 101;
+	public final static int ETL_E_PARTY_PHONE = 22;
+	public final static int ETL_E_PARTY_ADDRESS = 63;
+	public final static int ETL_E_ACCOUNT = 56;
+	public final static int ETL_E_TRANSACTION = 242;
+	public final static int ETL_E_TRANSACTION_OLD = 204;
+	public final static int ETL_E_LOAN_DETAIL = 56;
+	public final static int ETL_E_LOAN = 107;
+	public final static int ETL_E_COLLATERAL = 101;
+	public final static int ETL_E_GUARANTOR = 62;
+	public final static int ETL_E_FX_RATE = 15;
+	public final static int ETL_E_SERVICE = 717;
+	public final static int ETL_E_TRANSFER = 361;
+	public final static int ETL_E_FCX = 125;
+	public final static int ETL_E_CALENDAR = 11;
+
+	// 讀檔筆數域值
+	public final static int ETL_E_Stage = 10000;
 	
 }

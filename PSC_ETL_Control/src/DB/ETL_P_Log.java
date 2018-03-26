@@ -69,7 +69,7 @@ public class ETL_P_Log {
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 
 		String sql_statement = 
-				" INSERT INTO " + ETL_Profile.db2TableSchema + ".ETL_FILE_LOG ( " +
+				" INSERT INTO " + ETL_Profile.GAML_db2TableSchema + ".ETL_FILE_LOG ( " +
 					" BATCH_NO, " +
 					" CENTRAL_NO, " +
 					" RECORD_DATE, " +
@@ -87,7 +87,7 @@ public class ETL_P_Log {
 					" SRC_FILE " +
 				") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-		Connection con = ConnectionHelper.getDB2Connection();
+		Connection con = ConnectionHelper.getDB2ConnGAML("DB");
 		PreparedStatement pstmt = con.prepareStatement(sql_statement);
 
 		pstmt.setString(1, BATCH_NO);
@@ -144,7 +144,7 @@ public class ETL_P_Log {
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 
 		String sql_statement = 
-				" UPDATE " + ETL_Profile.db2TableSchema + ".ETL_FILE_LOG SET " +
+				" UPDATE " + ETL_Profile.GAML_db2TableSchema + ".ETL_FILE_LOG SET " +
 					" END_DATETIME = ?, " +
 					" TOTAL_CNT = ?, " +
 					" SUCCESS_CNT = ?, " +
@@ -160,7 +160,7 @@ public class ETL_P_Log {
 					" AND STEP_TYPE = ? "
 				;
 
-		Connection con = ConnectionHelper.getDB2Connection();
+		Connection con = ConnectionHelper.getDB2ConnGAML("DB");
 		PreparedStatement pstmt = con.prepareStatement(sql_statement);
 
 		pstmt.setTimestamp(1, new Timestamp(END_DATETIME.getTime()));
@@ -188,6 +188,81 @@ public class ETL_P_Log {
 		}
 
 	}
+	
+	
+	/**  ETL_FILE_Log  V3  2018.01.31  KevinChange
+	 * ETL_FILE_Log格式
+	 * @param BATCH_NO 批次編號
+	 * @param CENTRAL_NO 報送單位
+	 * @param RECORD_DATE 檔案日期
+	 * @param FILE_TYPE 檔名業務別
+	 * @param FILE_NAME 檔案名稱
+	 * @param UPLOAD_NO 上傳批號
+	 * @param STEP_TYPE 步驟 
+	 * @param END_DATETIME 執行結束日期時間
+	 * @param TOTAL_CNT 總筆數
+	 * @param SUCCESS_CNT 成功筆數
+	 * @param FAILED_CNT 失敗筆數
+	 * @param EXE_RESULT 執行結果
+	 * @param EXE_RESULT_DESCRIPTION 執行結果說明
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws ClassNotFoundException
+	 * @throws SQLException
+	 */
+	public static void update_End_ETL_FILE_Log_NO_FILE_TYPE(String BATCH_NO, String CENTRAL_NO, java.util.Date RECORD_DATE, String FILE_NAME,
+			String UPLOAD_NO, String STEP_TYPE, java.util.Date END_DATETIME,
+			int TOTAL_CNT, int SUCCESS_CNT, int FAILED_CNT,
+			String EXE_RESULT, String EXE_RESULT_DESCRIPTION)
+			throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+
+		String insert_query = 
+				" UPDATE " + ETL_Profile.GAML_db2TableSchema + ".ETL_FILE_LOG SET " +
+					" END_DATETIME = ?, " +
+					" TOTAL_CNT = ?, " +
+					" SUCCESS_CNT = ?, " +
+					" FAILED_CNT = ?, " +
+					" EXE_RESULT = ?, " +
+					" EXE_RESULT_DESCRIPTION = ? " +
+				" WHERE BATCH_NO = ? " + 
+					" AND CENTRAL_NO = ? " +
+					" AND RECORD_DATE = ? " +
+					" AND FILE_NAME = ? " +
+					" AND UPLOAD_NO = ? " +
+					" AND STEP_TYPE = ? "
+				;
+
+		Connection con = ConnectionHelper.getDB2ConnGAML("DB");
+		PreparedStatement pstmt = con.prepareStatement(insert_query);
+
+		pstmt.setTimestamp(1, new Timestamp(END_DATETIME.getTime()));
+		pstmt.setInt(2, TOTAL_CNT);
+		pstmt.setInt(3, SUCCESS_CNT);
+		pstmt.setInt(4, FAILED_CNT);
+		pstmt.setString(5, EXE_RESULT);
+		pstmt.setString(6, EXE_RESULT_DESCRIPTION);
+		pstmt.setString(7, BATCH_NO);
+		pstmt.setString(8, CENTRAL_NO);
+		pstmt.setDate(9, new Date(RECORD_DATE.getTime()));
+		pstmt.setString(10, FILE_NAME);
+		pstmt.setString(11, UPLOAD_NO);
+		pstmt.setString(12, STEP_TYPE);
+		
+
+		pstmt.executeUpdate();
+
+		if (pstmt != null) {
+			pstmt.close();
+		}
+		if (con != null) {
+			con.close();
+		}
+
+	}
+	
+	
+	
+	
 
 	/**  未更新V2  2017.12.29  Tim Jhang
 	 * Error_Log格式
@@ -274,7 +349,7 @@ public class ETL_P_Log {
 			java.util.Date end_datetime) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 		
 		String sql_statement = 
-				" INSERT INTO " + ETL_Profile.db2TableSchema + ".ETL_DETAIL_LOG ( " +
+				" INSERT INTO " + ETL_Profile.GAML_db2TableSchema + ".ETL_DETAIL_LOG ( " +
 					" BATCH_NO, " +
 					" CENTRAL_NO, " +
 					" RECORD_DATE, " +
@@ -288,7 +363,7 @@ public class ETL_P_Log {
 					" END_DATETIME " +
 				" ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
 
-		Connection con = ConnectionHelper.getDB2Connection();
+		Connection con = ConnectionHelper.getDB2ConnGAML("DB");
 		PreparedStatement pstmt = con.prepareStatement(sql_statement);
 
 		pstmt.setString(1, batch_no);
@@ -338,7 +413,7 @@ public class ETL_P_Log {
 			String program_no, String exe_status, String exe_result, String exe_result_description, java.util.Date end_datetime
 			) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 		
-		String sql_statement = " UPDATE " + ETL_Profile.db2TableSchema + ".ETL_DETAIL_LOG " +
+		String sql_statement = " UPDATE " + ETL_Profile.GAML_db2TableSchema + ".ETL_DETAIL_LOG " +
 				" SET " +
 					" EXE_STATUS = ? ," +
 					" EXE_RESULT = ? ," +
@@ -352,7 +427,7 @@ public class ETL_P_Log {
 					" AND STEP_TYPE = ? " +
 					" AND PROGRAM_NO = ? ";
 
-		Connection con = ConnectionHelper.getDB2Connection();
+		Connection con = ConnectionHelper.getDB2ConnGAML("DB");
 		PreparedStatement pstmt = con.prepareStatement(sql_statement);
 
 		
@@ -399,7 +474,7 @@ public class ETL_P_Log {
 		int resultCount = 0;
 		
 		String sql_statement = 
-				" SELECT COUNT(*) FROM  " + ETL_Profile.db2TableSchema + ".ETL_DETAIL_LOG " +
+				" SELECT COUNT(*) FROM  " + ETL_Profile.GAML_db2TableSchema + ".ETL_DETAIL_LOG " +
 				" WHERE " +
 					" BATCH_NO = ? " +
 					" AND CENTRAL_NO = ? " +
@@ -408,7 +483,7 @@ public class ETL_P_Log {
 					" AND STEP_TYPE = ? " +
 					" AND PROGRAM_NO = ? ";
 
-		Connection con = ConnectionHelper.getDB2Connection();
+		Connection con = ConnectionHelper.getDB2ConnGAML("DB");
 		PreparedStatement pstmt = con.prepareStatement(sql_statement);
 
 		pstmt.setString(1, batch_no);

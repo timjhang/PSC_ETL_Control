@@ -228,6 +228,7 @@ public class ETL_Tool_StringX {
 		}
 	}
 	
+
 //	public static void main(String[] argv) throws Exception {
 //		Timestamp time =toTimestamp("163310","HHmmss");
 //		long aaa=time.getTime();

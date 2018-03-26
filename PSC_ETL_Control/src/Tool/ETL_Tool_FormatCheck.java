@@ -63,7 +63,7 @@ public class ETL_Tool_FormatCheck {
 			Date realDate = sdf.parse(dateStr);
 			return true;
 		} catch (Exception ex) {
-			System.out.println(ex.getMessage());
+			//System.out.println(ex.getMessage());
 			return false;
 		}
 	}

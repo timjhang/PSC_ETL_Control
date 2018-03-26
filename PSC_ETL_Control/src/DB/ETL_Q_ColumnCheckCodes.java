@@ -1,11 +1,16 @@
 package DB;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.ibm.db2.jcc.DB2Types;
 
 import Bean.ETL_Bean_CodeName_Data;
 import Profile.ETL_Profile;
@@ -42,19 +47,34 @@ public class ETL_Q_ColumnCheckCodes {
 	}
 	
 	// 取得檢核用代碼Map
-	public static Map<String, String> getCheckMap(String columnName) throws Exception {
+	public static Map<String, String> getCheckMap(Date record_date, String central_No, String columnName) throws Exception {
 		
 		// Code & Name
 		Map<String, String> resultMap = new HashMap<String, String>();
 		
-		Connection con = ConnectionHelper.getDB2Connection();
+        String sql = "{call " + ETL_Profile.db2TableSchema + ".Tool.getCodePairs(?,?,?,?,?,?)}";
 		
-		java.sql.Statement stmt = con.createStatement();
-		String query = "SELECT CODE, NAME FROM " + ETL_Profile.db2TableSchema + ".CODEPOOL "
-				+ "WHERE TABLESPACENAME = \'" + columnName + "\'";
-        java.sql.ResultSet rs = stmt.executeQuery(query);
-        
-        while (rs.next()) {
+		Connection con = ConnectionHelper.getDB2Connection();
+		CallableStatement cstmt = con.prepareCall(sql);
+		
+		cstmt.registerOutParameter(1, Types.INTEGER);
+		cstmt.setDate(2, new java.sql.Date(record_date.getTime()));
+		cstmt.setString(3, central_No);
+		cstmt.setString(4, columnName);
+		cstmt.registerOutParameter(5, DB2Types.CURSOR);
+		cstmt.registerOutParameter(6, Types.VARCHAR);
+		
+		cstmt.execute();
+		
+		int returnCode = cstmt.getInt(1);
+		
+		if (returnCode != 0) {
+			String errorMessage = cstmt.getString(6);
+            throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+		}
+		
+		java.sql.ResultSet rs = (java.sql.ResultSet)cstmt.getObject(5);
+		while (rs.next()) {
         	System.out.println(rs.getString(1) + " " + rs.getString(2)); // test
         	
         	String code = rs.getString(1);
@@ -64,7 +84,7 @@ public class ETL_Q_ColumnCheckCodes {
         	name = (name == null)?"":name.trim();
         	
         	resultMap.put(code, name);
-        }
+		}
         
         System.out.println("Map Size = " + resultMap.size()); // test
         
@@ -77,10 +97,10 @@ public class ETL_Q_ColumnCheckCodes {
 		return resultMap;
 	}
 	
-	public Map<String, Map<String, String>> getCheckMaps(String[][] checkColumnArray) throws Exception {
+	public Map<String, Map<String, String>> getCheckMaps(Date record_date, String central_No, String[][] checkColumnArray) throws Exception {
 		
 		for (int i = 0 ; i < checkColumnArray.length; i++) {
-			checkMaps.put(checkColumnArray[i][0], getCheckMap(checkColumnArray[i][1]));
+			checkMaps.put(checkColumnArray[i][0], getCheckMap(record_date, central_No, checkColumnArray[i][1]));
 		}
 		
 		return checkMaps;
@@ -101,7 +121,7 @@ public class ETL_Q_ColumnCheckCodes {
 			
 			ETL_Q_ColumnCheckCodes one = new ETL_Q_ColumnCheckCodes();
 			
-			Map<String, Map<String, String>> maps = one.getCheckMaps(checkColumnList);
+			Map<String, Map<String, String>> maps = one.getCheckMaps(new Date(), "600", checkColumnList);
 			System.out.println("size = " + maps.size());
 			Map<String, String> map;
 			map = maps.get("PARTY_PHONE_column_1");

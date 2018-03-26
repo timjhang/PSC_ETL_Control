@@ -70,6 +70,16 @@ public class ETL_Tool_StringQueue {
 		this.bytesList = bytesList;
 	}
 	
+	public int getBytesListIndex() {
+		return bytesListIndex;
+	}
+
+
+	public void setBytesListIndex(int bytesListIndex) {
+		this.bytesListIndex = bytesListIndex;
+	}
+
+
 	public int getByteListSize() {
 		return byteListSize;
 	}
@@ -88,7 +98,7 @@ public class ETL_Tool_StringQueue {
 	}
 	
 	public int setTargetString() {	// 重新set後, 完全更新Queue, 回傳已使用array數
-
+//System.out.println("tool:"+bytesListIndex);
 		this.targetStringBytes = bytesList.get(bytesListIndex);
 		this.totalByteLength = this.targetStringBytes.length;
 		this.popOutBytesLength = 0;
