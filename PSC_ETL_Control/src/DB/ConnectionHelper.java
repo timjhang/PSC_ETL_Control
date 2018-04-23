@@ -51,6 +51,7 @@ public class ConnectionHelper {
 		
 		System.out.println(user + " 連線  " + url + " ...");
 		Connection con = DriverManager.getConnection(url, user, password);
+		con.setAutoCommit(true);
 		System.out.println(user + " 連線成功!!");
 		
 		return con;
@@ -67,6 +68,7 @@ public class ConnectionHelper {
 		
 		System.out.println(user + " 連線  " + url + " ...");
 		Connection con = DriverManager.getConnection(url, user, password);
+		con.setAutoCommit(true);
 		System.out.println(user + " 連線成功!!");
 		
 		return con;
@@ -81,6 +83,7 @@ public class ConnectionHelper {
 		
 		System.out.println(user + " 連線  " + url + " ...");
 		Connection con = DriverManager.getConnection(url, user, password);
+		con.setAutoCommit(true);
 		System.out.println(user + " 連線成功!!");
 		
 		return con;

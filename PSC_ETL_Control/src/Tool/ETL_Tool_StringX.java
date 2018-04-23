@@ -9,6 +9,20 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class ETL_Tool_StringX {
+	/**
+	 * 轉換日期為String型態，格式pattern
+	 * @param dateStr 要轉換的字串
+	 * @return 轉換後的Timestamp物件，如轉換失敗，則回傳null
+	 */
+	public static String toUtilDateStr(Date date, String pattern) {
+		String dateString = null;
+		if (date != null) {
+			SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+			dateString = dateFormat.format(date);
+		}
+		return dateString;
+	}
+	
 
 	/**
 	 * 轉換字串為Timestamp型態，格式預設為yyyyMMddHHmmss

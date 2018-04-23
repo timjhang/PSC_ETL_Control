@@ -51,7 +51,7 @@ public class KevinTest {
 		
 	
 	
-		ETL_C_PROCESS.exeLfunction("ETL_S2", "001", "600", "20171206", "999");
+		ETL_C_PROCESS.exeLfunction("ETL_S2", "001", "600", "20171206", "999", "20180331");
 		
 	}
 

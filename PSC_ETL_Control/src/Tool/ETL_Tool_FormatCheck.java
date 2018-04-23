@@ -40,7 +40,7 @@ public class ETL_Tool_FormatCheck {
 			sdf.parse(dateStr);
 			return true;
 		} catch (Exception ex) {
-			System.out.println(ex.getMessage());
+			//System.out.println(ex.getMessage());
 			return false;
 		}
 	}
@@ -55,6 +55,11 @@ public class ETL_Tool_FormatCheck {
 		// 00000000代表1900/01/01
 		if ("00000000".equals(dateStr)) {
 			return true;
+		}
+		
+		
+		if (dateStr.length()!=8) {
+			return false;
 		}
 		
 		try {
@@ -97,6 +102,12 @@ public class ETL_Tool_FormatCheck {
 		}
 		
 		return true;
+	}
+	
+	
+	public static void main(String[] argv) throws Exception {
+		System.out.println(ETL_Tool_FormatCheck.checkDate("20180399"));
+
 	}
 
 }

@@ -147,7 +147,7 @@ public class ETL_Tool_FileByteUtil {
 		// 1:true 2: false 如格式都正確則是資料總筆數
 		int isFileOK = 0;
 		boolean isInsert = false;
-		List<Byte> list = new ArrayList<Byte>();
+		byte[]bytes =new byte[99999999];
 		
 		FileInputStream fileInputStream = new FileInputStream(path);
 		ETL_Tool_JBReader bufferedReader = new ETL_Tool_JBReader(fileInputStream, buffer_size);
@@ -157,21 +157,23 @@ public class ETL_Tool_FileByteUtil {
 		byte body = (byte) 50;
 		byte foot = (byte) 51;
 		
+		int index = 0;
 		while ((line = bufferedReader.readLineInBinary()) != null) {
-			list.add(line[0]);
+			bytes[index] = line[0];
+			index++;
 		}
 
-		if (list.size() < 2) {
+		if (bytes.length < 2) {
 			return isFileOK;
 		}
 
-		for (int i = 0; i < list.size(); i++) {
-			byte now = list.get(i);
+		for (int i = 0; i < index; i++) {
+			byte now = bytes[i];
 
 			if (i == 0) {
 				isFileOK = (head == now) ? 1 : 0;
 				// break;
-			} else if (i != (list.size() - 1)) {
+			} else if (i != (index - 1)) {
 				isFileOK = (body == now) ? 1 : 0;
 			} else {
 				isFileOK = (foot == now) ? 1 : 0;
@@ -189,7 +191,7 @@ public class ETL_Tool_FileByteUtil {
 
 		}
 
-		return (isInsert)? 0 : list.size();
+		return (isInsert)? 0 : index;
 	}
 
 	public int isFileOK(String path) throws IOException {

@@ -38,14 +38,23 @@ public class ETL_Tool_StringQueue {
 	ETL_Tool_Big5_To_UTF8 wordsXTool;
 	// 難字轉換map
 	Map<String, Map<String, String>> difficultWordMaps;
+	// 擴充字及特殊符號補充表
+	private Map<String, String> specialBig5Map;
 	
 	// class生成時, 按報送單位, 取得所有單位難字表
 	public ETL_Tool_StringQueue(String central_No) {
 		wordsXTool = new ETL_Tool_Big5_To_UTF8(ETL_Profile.DifficultWords_Lists_Path);
+		
 		difficultWordMaps = wordsXTool.getDifficultWordMaps(central_No);
+		specialBig5Map = wordsXTool.get_Special_Big5_System_And_Unicode_System_Map();
+		
 		if (difficultWordMaps == null) {
 			System.out.println("#########  報送單位:" + central_No + " 無法取得難字表！！  #########");
 //			throw new Exception("報送單位:" + central_No + " 無法取得難字表！！"); // for test
+		}
+		
+		if (specialBig5Map == null) {
+			System.out.println("#########  報送單位:" + central_No + " 無法取得擴充字及特殊符號補充表！！  #########");
 		}
 	}
 	
@@ -221,9 +230,8 @@ public class ETL_Tool_StringQueue {
 		
 		// 複製所需長度array至resultBytes上
 		System.arraycopy(targetStringBytes, tokenStartIndex, resultBytes, 0, popLength);
-		
 		if (difficultWordMaps != null) {
-			return wordsXTool.format(resultBytes, difficultWordMaps);
+			return ETL_Tool_Big5_To_UTF8.format(resultBytes, difficultWordMaps,specialBig5Map);
 		} else {
 			return new String(resultBytes, format);
 		}

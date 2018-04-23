@@ -20,13 +20,144 @@ import Bean.ETL_Bean_Response;
 
 public class ETL_C_CallWS {
 	
+	// 呼叫ETL Server CheckETLstatus, 確認ETL Server Web Service功能是否有正常開啟
+	public static boolean checkETLServerstatus(String ip_port) {
+		
+		try {
+			
+//			URL url = new URL("http://172.18.6.151:8080/AML_ETL/rest/checkETLstatus/WS1?testInput=check");
+			System.out.println("確認ETL Server Web Service功能: " + ip_port);
+			String urlStr = "http://" + ip_port + "/AML_ETL/rest/checkETLstatus/WS1?testInput=check";
+			
+			System.out.println("urlStr = " + urlStr);
+			URL url = new URL(urlStr);
+			
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+			conn.setRequestProperty("Accept", "application/xml");
+			
+			if (conn.getResponseCode() != 200) {
+				throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
+			}
+			
+			BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+			
+			boolean exeReault = false;
+			
+			String outputStr; // WebService輸出字串  XML格式
+			while ((outputStr = br.readLine()) != null) {
+				InputStream is = new ByteArrayInputStream(outputStr.getBytes("UTF-8"));
+				SAXReader reader = new SAXReader();
+				Document document = reader.read(is);
+				Element root = document.getRootElement();
+				
+				Element msg = root.element("msg");
+				if (msg != null) {
+					String msgText = msg.getTextTrim();
+					System.out.println("msg = " + msgText);
+					
+					if ("SUCCESS".equals(msgText)) {
+						
+						// Web Servie功能正常啟動, 可呼叫
+						exeReault = true;
+						
+					} else if ("FAILURE".equals(msgText)) {
+						
+						// Web Servie功能正常啟動, 確認參數錯誤
+						System.out.println("ETL Server testInput參數請使用 \"check\"");
+						exeReault = false;
+						
+					};
+					
+				} else {
+					throw new Exception("root has no element names msg");
+				}
+			}
+			
+			return exeReault;
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			System.out.println("呼叫Web Service出現錯誤: " + ip_port);
+			return false;
+		}
+	}
+	
+	// 呼叫ETL Server initETLserver
+	public static boolean call_ETL_Server_initETLserver(String ip_port) {
+		
+		try {
+			
+//			URL url = new URL("http://172.18.6.151:8080/AML_ETL/rest/initETLserver/WS1?action=initial");
+			System.out.println("確認ETL Server Web Service功能: " + ip_port);
+			String urlStr = "http://" + ip_port + "/AML_ETL/rest/initETLserver/WS1?action=initial";
+			
+			System.out.println("urlStr = " + urlStr);
+			URL url = new URL(urlStr);
+			
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+			conn.setRequestProperty("Accept", "application/xml");
+			
+			if (conn.getResponseCode() != 200) {
+				throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
+			}
+			
+			BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+			
+			boolean exeReault = false;
+			
+			String outputStr; // WebService輸出字串  XML格式
+			while ((outputStr = br.readLine()) != null) {
+				InputStream is = new ByteArrayInputStream(outputStr.getBytes("UTF-8"));
+				SAXReader reader = new SAXReader();
+				Document document = reader.read(is);
+				Element root = document.getRootElement();
+				
+				Element msg = root.element("msg");
+				if (msg != null) {
+					String msgText = msg.getTextTrim();
+					System.out.println("msg = " + msgText);
+					
+					if ("SUCCESS".equals(msgText)) {
+						
+						// Web Servie功能正常啟動, 可呼叫
+						exeReault = true;
+						
+					} else if ("FAILURE".equals(msgText)) {
+						
+						// 若出現錯誤, 拋出錯誤訊息Error Message
+						Element errorMsg = root.element("errorMsg");
+						String errorMsgStr = "tag \"errorMsg\" is null";
+						if (errorMsgStr != null) {
+							errorMsgStr = errorMsg.getTextTrim();
+						}
+						throw new Exception(errorMsgStr);
+					};
+					
+				} else {
+					throw new Exception("root has no element names msg");
+				}
+			}
+			
+			return exeReault;
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			System.out.println("呼叫Web Service initail出現錯誤: " + ip_port);
+			
+			return false;
+		}
+		
+	}
+	
 	// 呼叫ETL Server getUploadFile, 並取得下載檔案資訊
 	public static ETL_Bean_Response call_ETL_Server_getUploadFileInfo(String ip_port, String centralNo) {
 		ETL_Bean_Response response = new ETL_Bean_Response();
 		String[] fileInfoAry = new String[3];
 	
 		try {
-//				URL url = new URL("http://localhost:8083/AML_ETL/rest/getUploadFile/WS1");
+//			URL url = new URL("http://localhost:8083/AML_ETL/rest/getUploadFile/WS1");
 			System.out.println("call_ETL_Server_Efunction : 開始執行");
 
 			String urlStr = "http://" + ip_port + "/AML_ETL/rest/getUploadFile/WS1?";
@@ -44,8 +175,7 @@ public class ETL_C_CallWS {
 				throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
 			}
 
-			BufferedReader br = new BufferedReader(new InputStreamReader(
-					(conn.getInputStream())));
+			BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
 
 			System.out.println("Output from Server .... \n");
 //				String output;
@@ -273,7 +403,8 @@ public class ETL_C_CallWS {
 	
 	// 呼叫ETL Server Tfunction
 	public static boolean call_ETL_Server_Tfunction(String ip_port, String filePath, 
-			String batch_No, String exc_central_no, String record_DateStr, String upload_No) {
+			String batch_No, String exc_central_no, String record_DateStr, String upload_No,
+			String before_record_date) {
 		
 		try {
 //				URL url = new URL("http://localhost:8083/AML_ETL/rest/Tfunction/WS1");
@@ -291,6 +422,7 @@ public class ETL_C_CallWS {
 			urlStr = urlStr + "&exc_central_no=" + exc_central_no;
 			urlStr = urlStr + "&exc_record_date=" + record_DateStr;
 			urlStr = urlStr + "&upload_no=" + upload_No;
+			urlStr = urlStr + "&before_record_date=" + before_record_date;
 			
 			System.out.println("urlStr = " + urlStr);
 			URL url = new URL(urlStr);

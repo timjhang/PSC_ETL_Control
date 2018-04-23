@@ -40,13 +40,15 @@ public class ETL_C_Master {
 		
 		// 取得可用ETL Server
 		List<String[]> etlServerList = getUsableETLServer("ETL_SERVER", "Y");
+		
+		// 檢核ETL Server 是否正常可連線
+		// 排除連線異常，不可使用ETL Server，並給出提示訊息
+		filterETLServerOK(etlServerList);
+		
 		if (etlServerList.size() == 0) {
 			System.out.println("#### 無可用ETL Server 不進行作業");
 			return;
 		}
-		
-		// 檢核ETL Server 是否正常可連線  ????
-		
 		
 		// 呼叫確認用Web Service連線
  		System.out.println("etlServerList size = " + etlServerList.size()); // for test
@@ -62,10 +64,13 @@ public class ETL_C_Master {
 		
 		// for test
 		Date record_date;
+		Date before_record_date;
 		try {
-			record_date = new SimpleDateFormat("yyyyMMdd").parse("20171206");
+			before_record_date = new SimpleDateFormat("yyyyMMdd").parse("20180326");
+			record_date = new SimpleDateFormat("yyyyMMdd").parse("20180327");
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			before_record_date = new Date();
 			record_date = new Date();
 		}
 		
@@ -96,7 +101,7 @@ public class ETL_C_Master {
 		}
 		
 		// 指定ETL任務
-		ETL_C_PROCESS.executeETL(etlServerList.get(0), batchNo, readyCentralList.get(0), record_date);
+		ETL_C_PROCESS.executeETL(etlServerList.get(0), batchNo, readyCentralList.get(0), record_date, before_record_date);
 		
 		System.out.println("#### ETL_C_Master End");
 	}
@@ -150,6 +155,19 @@ public class ETL_C_Master {
 		}
 		
 		return resultList;
+	}
+	
+	// 檢核ETL Server 是否正常可連線
+	// 排除連線異常，不可使用ETL Server，並給出提示訊息
+	private static void filterETLServerOK(List<String[]> etlServerList) {
+		
+		for (int i = 0; i < etlServerList.size(); i++) {
+			// 若ETL Server Service沒有正常啟動，該ETL Server會從List中移除
+			if (!ETL_C_CallWS.checkETLServerstatus(etlServerList.get(i)[2])) {
+				etlServerList.remove(i);
+				i--;
+			}
+		}
 	}
 	
 	// 取得待執行共用中心List
@@ -243,7 +261,7 @@ public class ETL_C_Master {
 		List<String> resultLust = new ArrayList<String>();
 		
 		try {
-			// 若檔案存在, 加入list表示就緒中心
+			// 若檔案存在並檢查Master_Log是否處理過, 加入list表示就緒中心
 			for (int i = 0; i < centralList.size(); i++) {
 				if (checkHasMaster(centralList.get(i))) {
 					resultLust.add(centralList.get(i));

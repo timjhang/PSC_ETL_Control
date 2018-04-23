@@ -50,7 +50,10 @@ public class ETL_Profile {
 	public final static String Foreign_Currency = "FR"; // 外幣
 	
 	// 難字表excel檔存放路徑
-	public final static String DifficultWords_Lists_Path = "C:/DifficultWords/%s.xlsx";
+	public final static String DifficultWords_Lists_Path = "C:/AML_TOOL/DifficultWords/%s.xlsx";
+
+	// 特殊符號及罕見字表excel檔存放路徑
+	public final static String SpecialWords_Lists_Path = "C:/AML_TOOL/SpecialBig5Words/SpecialBig5Words.xlsx";
 	
 	// 新北市農會附設北區農會電腦共用中心  951  相關參數
 	
@@ -100,5 +103,9 @@ public class ETL_Profile {
 
 	// 讀檔筆數域值
 	public final static int ETL_E_Stage = 10000;
+	
+	// 五代用Script檔讀取位置
+	public final static String ETL_E_CLP_MODEL_SCRIPT_FILE_PATH = "C:/ETL/L_Script/model/";
+	public final static String ETL_E_CLP_RUN_SCRIPT_FILE_PATH = "C:/ETL/L_Script/run/";
 	
 }

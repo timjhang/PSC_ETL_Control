@@ -10,6 +10,11 @@ import org.apache.commons.beanutils.PropertyUtils;
 /**
  * 
  * @author Kevin 此類別主要用於轉換型態
+ * 
+ * 注意:欄位為型態為String 
+ * 		將會執行
+ * 	          一個全形空白替換成兩個半行空白
+ * 	   並trim字首字尾
  */
 public class ETL_Tool_CastObjUtil {
 
@@ -27,6 +32,16 @@ public class ETL_Tool_CastObjUtil {
 						.cast(PropertyUtils.getProperty(javaBean, field.getName()));
 //				objs[i] = new java.sql.Date(utilDate.getTime());
 				objs[i] = (utilDate == null) ? null : new java.sql.Date(utilDate.getTime());
+			} else if ("java.lang.String".equals(clazz.getName())) {
+				Object obj=clazz.cast(PropertyUtils.getProperty(javaBean, field.getName())); 
+				if (obj!=null) { 
+					// repalce 全形 trim 空白 
+					String objStr = obj.toString(); 
+					objStr = objStr.replaceAll("　", " "); 
+					objs[i] = objStr.trim(); 
+				} else { 
+					objs[i] = null; 
+				} 
 			} else {
 
 				objs[i] = clazz.cast(PropertyUtils.getProperty(javaBean, field.getName()));

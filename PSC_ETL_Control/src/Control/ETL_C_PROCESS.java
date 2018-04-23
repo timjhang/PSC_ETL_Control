@@ -14,7 +14,7 @@ import Profile.ETL_Profile;
 
 public class ETL_C_PROCESS {
 	// 執行ETL
-	public static boolean executeETL(String[] etlServerInfo, String batch_No, String central_no, Date record_Date) {
+	public static boolean executeETL(String[] etlServerInfo, String batch_No, String central_no, Date record_Date, Date before_record_date) {
 		
 		System.out.println("#### ETL_C_PROCESS  Start");
 		
@@ -23,16 +23,22 @@ public class ETL_C_PROCESS {
 		System.out.println("Batch_No = " + batch_No);
 		System.out.println("Central_no = " + central_no);
 		System.out.println("Record_Date = " + record_Date);
+		System.out.println("Before_record_date = " + before_record_date);
 		
 		String exeInfo = "Server_No : " + etlServerInfo[0] + " , Server : " + etlServerInfo[1] + " , IP : " + etlServerInfo[2] + "\n";
 		exeInfo = exeInfo + "Batch_No = " + batch_No + "\n";
 		exeInfo = exeInfo + "Central_no = " + central_no + "\n";
 		exeInfo = exeInfo + "Record_Date = " + record_Date + "\n";
+		exeInfo = exeInfo + "Before_record_date = " + before_record_date + "\n";
+		
+		String server_no = etlServerInfo[0];
 		
 		// ETL Server下載特定中心資料
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
 		String[] fileInfo = new String[3];
-		String exc_record_date = "";
+		String exc_record_dateStr = sdf.format(record_Date);
 		String upload_no = "";
+		String before_record_dateStr = sdf.format(before_record_date);
 		boolean exeResult = true;
 		
 		// for test
@@ -44,13 +50,21 @@ public class ETL_C_PROCESS {
 		try {
 			update_Server_Status(etlServerInfo[0], "U");
 		} catch (Exception ex) {
-			System.out.println("更新Server狀態\"使用中\"失敗");
+			System.out.println("更新Server狀態\"使用中\"失敗 " + server_no);
 			ex.printStackTrace();
 			return false;
 		}
 		
 		try {
 			
+			// 呼叫ETL Server進行initial作業
+			if (!ETL_C_CallWS.call_ETL_Server_initETLserver(etlServerInfo[2])) {
+//				System.out.println("#### ETL_C_PROCESS - executeETL - call_ETL_Server_initETLserver 發生錯誤！ " + server_no);
+//				return false;
+				throw new Exception("#### ETL_C_PROCESS - executeETL - call_ETL_Server_initETLserver 發生錯誤！ " + server_no);
+			}
+			
+			// 下載中心檔案
 			ETL_Bean_Response response = ETL_C_CallWS.call_ETL_Server_getUploadFileInfo(etlServerInfo[2], central_no);
 
 			if(response.isSuccess()) {
@@ -60,14 +74,15 @@ public class ETL_C_PROCESS {
 			
 			// 執行下載
 			if (!response.isSuccess()) {
-				System.out.println("#### ETL_C_PROCESS - executeETL - call_ETL_Server_getUploadFileInfo 發生錯誤！");
-				return false;
+//				System.out.println("#### ETL_C_PROCESS - executeETL - call_ETL_Server_getUploadFileInfo 發生錯誤！ " + server_no);
+//				return false;
+				throw new Exception("#### ETL_C_PROCESS - executeETL - call_ETL_Server_getUploadFileInfo 發生錯誤！ " + server_no);
 			}
-			exc_record_date = fileInfo[0];
+//			exc_record_dateStr = fileInfo[0];  // test  temp  2018.04.13 TimJhang
 			upload_no = fileInfo[1];
 			
-			System.out.println("#### ETL_C_PROCESS fileInfo[0]"+fileInfo[0]);
-			System.out.println("#### ETL_C_PROCESSfileInfo[1]"+fileInfo[1]);
+			System.out.println("#### ETL_C_PROCESS fileInfo[0]" + fileInfo[0] + " " + server_no);
+			System.out.println("#### ETL_C_PROCESS fileInfo[1]" + fileInfo[1] + " " + server_no);
 	
 			// for test
 //			Date testDate = new SimpleDateFormat("yyyyMMdd").parse("20180227");
@@ -80,26 +95,31 @@ public class ETL_C_PROCESS {
 			
 			// 寫入E Master Log
 			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "E", etlServerInfo[0])) {
-	//			System.out.println("E Master Log已存在\n" + exeInfo);
-				return false;
+//				System.out.println("E Master Log已存在\n" + exeInfo);
+//				return false;
+				throw new Exception("E Master Log已存在\n" + exeInfo);
 			};
 			// 進行E系列程式
-			if (!ETL_C_CallWS.call_ETL_Server_Efunction(etlServerInfo[2], "", batch_No, central_no, exc_record_date, upload_no)) {
-				System.out.println("#### ETL_C_PROCESS - executeETL - call_ETL_Server_Efunction 發生錯誤！");
-				return false;
+			if (!ETL_C_CallWS.call_ETL_Server_Efunction(etlServerInfo[2], "", batch_No, central_no, exc_record_dateStr, upload_no)) {
+//				System.out.println("#### ETL_C_PROCESS - executeETL - call_ETL_Server_Efunction 發生錯誤！ " + server_no);
+//				return false;
+				throw new Exception("#### ETL_C_PROCESS - executeETL - call_ETL_Server_Efunction 發生錯誤！ " + server_no);
 			}
 			// 更新 E Master Log
 			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "E", "E", "Y", "");
 			
+			
 			// 寫入T Master Log
 			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "T", etlServerInfo[0])) {
-				System.out.println("T Master Log已存在\n" + exeInfo);
-				return false;
+//				System.out.println("T Master Log已存在\n" + exeInfo);
+//				return false;
+				throw new Exception("T Master Log已存在\n" + exeInfo);
 			}
 			// 進行T系列程式
-			if (!ETL_C_CallWS.call_ETL_Server_Tfunction(etlServerInfo[2], "", batch_No, central_no, exc_record_date, upload_no)) {
-				System.out.println("#### ETL_C_PROCESS - executeETL - call_ETL_Server_Tfunction 發生錯誤！");
-				return false;
+			if (!ETL_C_CallWS.call_ETL_Server_Tfunction(etlServerInfo[2], "", batch_No, central_no, exc_record_dateStr, upload_no, before_record_dateStr)) {
+//				System.out.println("#### ETL_C_PROCESS - executeETL - call_ETL_Server_Tfunction 發生錯誤！ " + server_no);
+//				return false;
+				throw new Exception("#### ETL_C_PROCESS - executeETL - call_ETL_Server_Tfunction 發生錯誤！ " + server_no);
 			}
 			// 更新 T Master Log
 			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "T", "E", "Y", "");
@@ -107,16 +127,16 @@ public class ETL_C_PROCESS {
 			
 			// 寫入L Master Log
 			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "L", etlServerInfo[0])) {
-				System.out.println("L Master Log已存在\n" + exeInfo);
-				return false;
+//				System.out.println("L Master Log已存在\n" + exeInfo);
+//				return false;
+				throw new Exception("L Master Log已存在\n" + exeInfo);
 			}
-
 			// 進行L系列程式  // TODO
-			if (!exeLfunction(etlServerInfo[0], batch_No, central_no, exc_record_date, upload_no)) {
-				System.out.println("#### ETL_C_PROCESS - executeETL - exeLfunction 發生錯誤！");
-				return false;
+			if (!exeLfunction(etlServerInfo[0], batch_No, central_no, exc_record_dateStr, upload_no, before_record_dateStr)) {
+//				System.out.println("#### ETL_C_PROCESS - executeETL - exeLfunction 發生錯誤！ " + server_no);
+//				return false;
+				throw new Exception("#### ETL_C_PROCESS - executeETL - exeLfunction 發生錯誤！ " + server_no);
 			}
-
 			// 更新 L Master Log
 			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "L", "E", "Y", "");
 
@@ -129,7 +149,7 @@ public class ETL_C_PROCESS {
 			try {
 				updateCentralTime(central_no, record_Date, upload_no, "End");
 			} catch (Exception ex) {
-				System.out.println("更新Central:" + central_no + " - 狀態:\"執行完畢\"失敗");
+				System.out.println("更新Central:" + central_no + " - 狀態:\"執行完畢\"失敗 " + server_no);
 				ex.printStackTrace();
 				exeResult = false;
 			}
@@ -139,7 +159,7 @@ public class ETL_C_PROCESS {
 		try {
 			update_Server_Status(etlServerInfo[0], "Y");
 		} catch (Exception ex) {
-			System.out.println("更新Server狀態\"可使用\"失敗");
+			System.out.println("更新Server狀態\"可使用\"失敗 " + server_no);
 			ex.printStackTrace();
 			exeResult = false;
 		}
@@ -178,7 +198,7 @@ public class ETL_C_PROCESS {
 			if (returnCode != 0) {
 				String errorMessage = cstmt.getString(8);
 	            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
-//			            throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+//			    throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
 	            
 	            return false;
 			}
@@ -222,7 +242,7 @@ public class ETL_C_PROCESS {
 			if (returnCode != 0) {
 				String errorMessage = cstmt.getString(8);
 	            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
-//			            throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+//			    throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
 	            
 	            return false;
 			}
@@ -267,10 +287,10 @@ public class ETL_C_PROCESS {
 		
 		//for test
 		System.out.println("##########update_Central_Time Start");
-		System.out.println("central_No:"+central_No);
-		System.out.println("record_Date:"+record_Date);
-		System.out.println("upload_No:"+upload_No);
-		System.out.println("status:"+status);
+		System.out.println("central_No:" + central_No);
+		System.out.println("record_Date:" + record_Date);
+		System.out.println("upload_No:" + upload_No);
+		System.out.println("status:" + status);
 		System.out.println("##########update_Central_Time End");
 		
 		String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.update_Central_Time(?,?,?,?,?,?)}";
@@ -300,7 +320,7 @@ public class ETL_C_PROCESS {
 	
 	// 執行L系列程式  // TODO
 	public static boolean exeLfunction(String server_No, String batch_No, String exc_central_no, String record_DateStr,
-			String upload_No) {
+			String upload_No, String before_record_dateStr) {
 		System.out.println("call_ETL_Server_Lfunction : 開始執行");
 		try {
 
@@ -311,6 +331,8 @@ public class ETL_C_PROCESS {
 			Date exc_record_date = new SimpleDateFormat("yyyyMMdd").parse(record_DateStr);
 			logData.setRECORD_DATE(exc_record_date);
 			logData.setUPLOAD_NO(upload_No);
+			Date before_record_date = new SimpleDateFormat("yyyyMMdd").parse(before_record_dateStr);
+			logData.setBEFORE_ETL_PROCESS_DATE(before_record_date);
 
 			String fedServer = "";
 			// 設定fedName
@@ -410,7 +432,8 @@ public class ETL_C_PROCESS {
 			serverInfo[1] = "test2";
 			serverInfo[2] = "127.0.0.1:8083";
 			Date date = new Date();
-			executeETL(serverInfo, "tim18226", "600", date);
+			Date b_date = new Date();
+			executeETL(serverInfo, "tim18226", "600", date, b_date);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
