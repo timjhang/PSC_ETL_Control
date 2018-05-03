@@ -12,7 +12,7 @@ public class ETL_C_BatchTime {
 
 	public static boolean isExecute(String strTime, String batchTypeCode) {
 		
-		System.out.println("####### ETL_C_BatchTime - isExecute - Start");
+//		System.out.println("####### ETL_C_BatchTime - isExecute - Start");
 		
 		int need = 0;
 		
@@ -45,7 +45,7 @@ public class ETL_C_BatchTime {
 //			throw new Exception(ex.getMessage());
 		}
 		
-		System.out.println("####### ETL_C_BatchTime - isExecute - End");
+//		System.out.println("####### ETL_C_BatchTime - isExecute - End");
 		
 		if (need == 0) {
   			return false;

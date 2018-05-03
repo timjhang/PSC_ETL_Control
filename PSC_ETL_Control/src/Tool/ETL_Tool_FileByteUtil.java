@@ -185,7 +185,7 @@ public class ETL_Tool_FileByteUtil {
 				// 寫入Error Log
 				errWriter.addErrLog(new ETL_Bean_ErrorLog_Data(pfn, upload_no, "E", String.valueOf(i + 1), "區別碼",
 						"解析檔案出現嚴重錯誤-區別碼錯誤"));
-				System.out.println("第" + i + "筆");
+//				System.out.println("第" + i + "筆");
 				errWriter.insert_Error_Log();
 			}
 

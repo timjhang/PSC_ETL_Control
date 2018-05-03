@@ -2,8 +2,10 @@ package Control;
 
 public class ETL_C_Profile {
 
-
-	public static final String ETL_Download_localPath = "D:/ETL/DB";
+	// GAML Server下載Master及壓縮檔路徑
+	public static final String ETL_Download_localPath = "C:/ETL/DB";
+	// ETL Server下載Master及壓縮檔路徑
+	public static final String ETL_Download_RemotePath = "D:/ETL/DB";
 	
 //for gaml測試	
 //	public static final String sftp_hostName = "172.18.6.152"; // jar檔預設port:22

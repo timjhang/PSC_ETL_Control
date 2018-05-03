@@ -16,7 +16,7 @@ public class ETL_L_FX_RATE {
 	// 觸發DB2載入Procedure, 資料載入FX_RATE_LOAD_TEMP  // TODO
 	public void trans_to_FX_RATE_LOAD(ETL_Bean_LogData logData, String fedServer, String runTable) {
 		
-		System.out.println("#######Transform - ETL_L_FX_RATE - Start"); // TODO
+		System.out.println("#######Load - ETL_L_FX_RATE - Start"); // TODO
 		
 		try {
 			
@@ -47,7 +47,7 @@ public class ETL_L_FX_RATE {
 			ex.printStackTrace();
 		}
 		
-		System.out.println("#######Transform - ETL_L_FX_RATE - End"); // TODO
+		System.out.println("#######Load - ETL_L_FX_RATE - End"); // TODO
 		
 	}
 

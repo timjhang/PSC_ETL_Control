@@ -16,7 +16,7 @@ public class ETL_L_LOAN_GUARANTOR {
 	// 觸發DB2載入Procedure, 資料載入LOAN_GUARANTOR_LOAD_TEMP  // TODO
 	public void trans_to_LOAN_GUARANTOR_LOAD(ETL_Bean_LogData logData, String fedServer, String runTable) {
 		
-		System.out.println("#######Transform - ETL_L_LOAN_DETAIL - Start"); // TODO
+		System.out.println("#######Load - ETL_L_LOAN_DETAIL - Start"); // TODO
 		
 		try {
 			
@@ -47,7 +47,7 @@ public class ETL_L_LOAN_GUARANTOR {
 			ex.printStackTrace();
 		}
 		
-		System.out.println("#######Transform - ETL_L_LOAN_DETAIL - End"); // TODO
+		System.out.println("#######Load - ETL_L_LOAN_DETAIL - End"); // TODO
 		
 	}
 

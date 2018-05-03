@@ -68,14 +68,12 @@ public class ETL_C_PROCESS {
 			ETL_Bean_Response response = ETL_C_CallWS.call_ETL_Server_getUploadFileInfo(etlServerInfo[2], central_no);
 
 			if(response.isSuccess()) {
-				//取出物件轉型
+				//取出物件轉型, <資料日期|上傳批號 |zip檔名>
 				fileInfo = (String[]) response.getObj();
 			}
 			
 			// 執行下載
 			if (!response.isSuccess()) {
-//				System.out.println("#### ETL_C_PROCESS - executeETL - call_ETL_Server_getUploadFileInfo 發生錯誤！ " + server_no);
-//				return false;
 				throw new Exception("#### ETL_C_PROCESS - executeETL - call_ETL_Server_getUploadFileInfo 發生錯誤！ " + server_no);
 			}
 //			exc_record_dateStr = fileInfo[0];  // test  temp  2018.04.13 TimJhang
@@ -84,25 +82,15 @@ public class ETL_C_PROCESS {
 			System.out.println("#### ETL_C_PROCESS fileInfo[0]" + fileInfo[0] + " " + server_no);
 			System.out.println("#### ETL_C_PROCESS fileInfo[1]" + fileInfo[1] + " " + server_no);
 	
-			// for test
-//			Date testDate = new SimpleDateFormat("yyyyMMdd").parse("20180227");
-//			record_Date = new SimpleDateFormat("yyyyMMdd").parse("20180227");
-
-			
 			// 更新報送單位狀態"使用中"
 			updateCentralTime(central_no, record_Date, upload_no, "Start");
-
 			
 			// 寫入E Master Log
 			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "E", etlServerInfo[0])) {
-//				System.out.println("E Master Log已存在\n" + exeInfo);
-//				return false;
 				throw new Exception("E Master Log已存在\n" + exeInfo);
 			};
 			// 進行E系列程式
 			if (!ETL_C_CallWS.call_ETL_Server_Efunction(etlServerInfo[2], "", batch_No, central_no, exc_record_dateStr, upload_no)) {
-//				System.out.println("#### ETL_C_PROCESS - executeETL - call_ETL_Server_Efunction 發生錯誤！ " + server_no);
-//				return false;
 				throw new Exception("#### ETL_C_PROCESS - executeETL - call_ETL_Server_Efunction 發生錯誤！ " + server_no);
 			}
 			// 更新 E Master Log
@@ -111,14 +99,10 @@ public class ETL_C_PROCESS {
 			
 			// 寫入T Master Log
 			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "T", etlServerInfo[0])) {
-//				System.out.println("T Master Log已存在\n" + exeInfo);
-//				return false;
 				throw new Exception("T Master Log已存在\n" + exeInfo);
 			}
 			// 進行T系列程式
 			if (!ETL_C_CallWS.call_ETL_Server_Tfunction(etlServerInfo[2], "", batch_No, central_no, exc_record_dateStr, upload_no, before_record_dateStr)) {
-//				System.out.println("#### ETL_C_PROCESS - executeETL - call_ETL_Server_Tfunction 發生錯誤！ " + server_no);
-//				return false;
 				throw new Exception("#### ETL_C_PROCESS - executeETL - call_ETL_Server_Tfunction 發生錯誤！ " + server_no);
 			}
 			// 更新 T Master Log
@@ -127,14 +111,10 @@ public class ETL_C_PROCESS {
 			
 			// 寫入L Master Log
 			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "L", etlServerInfo[0])) {
-//				System.out.println("L Master Log已存在\n" + exeInfo);
-//				return false;
 				throw new Exception("L Master Log已存在\n" + exeInfo);
 			}
-			// 進行L系列程式  // TODO
+			// 進行L系列程式
 			if (!exeLfunction(etlServerInfo[0], batch_No, central_no, exc_record_dateStr, upload_no, before_record_dateStr)) {
-//				System.out.println("#### ETL_C_PROCESS - executeETL - exeLfunction 發生錯誤！ " + server_no);
-//				return false;
 				throw new Exception("#### ETL_C_PROCESS - executeETL - exeLfunction 發生錯誤！ " + server_no);
 			}
 			// 更新 L Master Log
@@ -344,6 +324,7 @@ public class ETL_C_PROCESS {
 
 			// 執行用Table (正常 rerun, 重跑rerun)
 			String runTable = "temp";
+//			String runTable = "rerun"; // test  temp  2018.04.23  TimJhang
 			
 			
 			System.out.println("batch_No:" + batch_No);
@@ -378,15 +359,6 @@ public class ETL_C_PROCESS {
 			logData.setPROGRAM_NO("ETL_L_LOAN");
 			new ETL_L_LOAN().trans_to_LOAN_LOAD(logData, fedServer, runTable);
 			
-			logData.setPROGRAM_NO("ETL_L_SERVICE");
-			new ETL_L_SERVICE().trans_to_SERVICE_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_TRANSACTION");
-			new ETL_L_TRANSACTION().trans_to_TRANSACTION_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_TRANSFER");
-			new ETL_L_TRANSFER().trans_to_TRANSFER_LOAD(logData, fedServer, runTable);
-			
 			logData.setPROGRAM_NO("ETL_L_ACCOUNT_PROPERTY");
 			new ETL_L_ACCOUNT_PROPERTY().trans_to_ACCOUNT_PROPERTY_LOAD(logData, fedServer, runTable);
 			
@@ -413,8 +385,18 @@ public class ETL_C_PROCESS {
 			
 			logData.setPROGRAM_NO("ETL_L_PARTY");
 			new ETL_L_PARTY().trans_to_PARTY_LOAD(logData, fedServer, runTable);
-
-		
+			
+			logData.setPROGRAM_NO("ETL_L_SERVICE");
+			new ETL_L_SERVICE().trans_to_SERVICE_LOAD(logData, fedServer, runTable);
+			
+			logData.setPROGRAM_NO("ETL_L_TRANSFER");
+			new ETL_L_TRANSFER().trans_to_TRANSFER_LOAD(logData, fedServer, runTable);
+			
+			logData.setPROGRAM_NO("ETL_L_TRANSACTION");
+			new ETL_L_TRANSACTION().trans_to_TRANSACTION_LOAD(logData, fedServer, runTable);
+			
+			logData.setPROGRAM_NO("ETL_L_ERROR_LOG");
+			new ETL_L_ERROR_LOG().trans_to_Error_Log(logData, fedServer, runTable);
 
 		} catch (Exception ex) {
 			System.out.println("call_ETL_Server_Lfunction : 發生錯誤");

@@ -21,7 +21,7 @@ import Bean.ETL_Bean_Response;
 public class ETL_C_CallWS {
 	
 	// 呼叫ETL Server CheckETLstatus, 確認ETL Server Web Service功能是否有正常開啟
-	public static boolean checkETLServerstatus(String ip_port) {
+	public static boolean checkETLServerStatus(String ip_port) {
 		
 		try {
 			
@@ -293,7 +293,7 @@ public class ETL_C_CallWS {
 			//filePath = "C%3A%2Ftest2%2F600%2F001"; // for test
 
 			//TODO  upload_No???
-			filePath = ETL_C_Profile.ETL_Download_localPath + exc_central_no + "/" + record_DateStr + "/" + upload_No;
+			filePath = ETL_C_Profile.ETL_Download_RemotePath + exc_central_no + "/" + record_DateStr + "/" + upload_No;
 			URLEncoder.encode(filePath, "UTF-8");
 			
 			String urlStr = "http://" + ip_port + "/AML_ETL/rest/Efunction/WS1?";
@@ -413,7 +413,7 @@ public class ETL_C_CallWS {
 //				filePath = ""; // ETL Server下載檔案位置路徑 encode碼 (D:/ETL/DB)
 			//filePath = "C%3A%2Ftest2%2F600%2F001"; // for test
 			//TODO  upload_No???
-			filePath = ETL_C_Profile.ETL_Download_localPath + exc_central_no + "/" + record_DateStr + "/" + upload_No;
+			filePath = ETL_C_Profile.ETL_Download_RemotePath + exc_central_no + "/" + record_DateStr + "/" + upload_No;
 			URLEncoder.encode(filePath, "UTF-8");
 			
 			String urlStr = "http://" + ip_port + "/AML_ETL/rest/Tfunction/WS1?";
