@@ -14,7 +14,7 @@ import Profile.ETL_Profile;
 
 public class ETL_C_PROCESS {
 	// 執行ETL
-	public static boolean executeETL(String[] etlServerInfo, String batch_No, String central_no, Date record_Date, Date before_record_date) {
+	public static boolean executeETL(String[] etlServerInfo, String batch_No, String central_no, String[] ptr_upload_no, Date record_Date, Date before_record_date) {
 		
 		System.out.println("#### ETL_C_PROCESS  Start");
 		
@@ -78,6 +78,7 @@ public class ETL_C_PROCESS {
 			}
 //			exc_record_dateStr = fileInfo[0];  // test  temp  2018.04.13 TimJhang
 			upload_no = fileInfo[1];
+			ptr_upload_no[0] = upload_no;
 			
 			System.out.println("#### ETL_C_PROCESS fileInfo[0]" + fileInfo[0] + " " + server_no);
 			System.out.println("#### ETL_C_PROCESS fileInfo[1]" + fileInfo[1] + " " + server_no);
@@ -415,7 +416,8 @@ public class ETL_C_PROCESS {
 			serverInfo[2] = "127.0.0.1:8083";
 			Date date = new Date();
 			Date b_date = new Date();
-			executeETL(serverInfo, "tim18226", "600", date, b_date);
+			String[] ptr_upload_no = new String[1];
+			executeETL(serverInfo, "tim18226", "600", ptr_upload_no, date, b_date);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

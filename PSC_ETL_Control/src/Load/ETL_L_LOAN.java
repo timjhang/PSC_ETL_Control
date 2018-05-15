@@ -47,7 +47,7 @@ public class ETL_L_LOAN {
 			ex.printStackTrace();
 		}
 		
-		System.out.println("#######Load - ETL_L_LOAN_DETAIL - End"); // TODO
+		System.out.println("#######Load - ETL_L_LOAN - End"); // TODO
 		
 	}
 

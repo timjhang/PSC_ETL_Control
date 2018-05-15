@@ -34,12 +34,10 @@
   		<property name="dataSource" ref="dataSource"/>
   	</bean> -->
   
-  	<!-- Master控制程式 -->
+  	<!-- Master ETL 主排程控制程式 -->
   	<bean id="jobDetailForMasterSchedule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="targetObject">
-			<!-- <bean id="Master_test" class="com.netgents.gutenberg.tar.service.Master_test"> -->
-			<!-- <bean id="Master_test" class="BatchTest"> -->
-			<bean id="Master_test" class="Control.ETL_C_Master">
+			<bean id="Master" class="Control.ETL_C_Master">
 				<!-- <property name="connectString" value="123"/>
 				<property name="userName" value="345"/>
         		<property name="password" value="567"/> -->
@@ -58,14 +56,11 @@
 			<value>0 * * * * ?</value>
 		</property>
 	</bean>
-  
-  	<!-- 控制程式
-	<bean id="jobDetailForControlSchedule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+	
+	<!-- Master ETL 建立5代Table控制程式 -->
+  	<bean id="jobDetailForNew5GSchedule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="targetObject">
-			<bean id="Control_test" class="com.netgents.gutenberg.tar.service.Control_test">	
-				<property name="connectString" value="123"/>
-				<property name="userName" value="345"/>
-        		<property name="password" value="567"/>
+			<bean id="New5G" class="Control.ETL_C_New5G">
 			</bean>
 		</property>
 		<property name="targetMethod">
@@ -73,21 +68,21 @@
 		</property>
 	</bean>
 	 
-	<bean id="ControlTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+	<bean id="New5GTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail">
-			<ref bean="jobDetailForControlSchedule" />
+			<ref bean="jobDetailForNew5GSchedule" />
 		</property>
 		<property name="cronExpression">
 			<value>0 * * * * ?</value>
 		</property>
-	</bean> -->
+	</bean>
 	
 	<!-- 批次作業 -->
 	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
 			<list>
-				<ref local="MasterTrigger" />
-				<!-- <ref local="ControlTrigger" /> -->
+				<!-- <ref local="MasterTrigger" /> -->
+				<ref local="New5GTrigger" />
 			</list>
 		</property>
 	</bean>

@@ -30,7 +30,6 @@ public class ETL_C_FIVE_G {
 			createCopyTableCLPScript(oldDate, newDate, central_No, "ACCOUNT", tableType);
 			createCopyTableCLPScript(oldDate, newDate, central_No, "ACCOUNT_PROPERTY", tableType);
 			createCopyTableCLPScript(oldDate, newDate, central_No, "BALANCE", tableType);
-			createCopyTableCLPScript(oldDate, newDate, central_No, "CALENDAR", tableType);
 			createCopyTableCLPScript(oldDate, newDate, central_No, "LOAN", tableType);
 			createCopyTableCLPScript(oldDate, newDate, central_No, "LOAN_COLLATERAL", tableType);
 			createCopyTableCLPScript(oldDate, newDate, central_No, "LOAN_DETAIL", tableType);
@@ -48,7 +47,6 @@ public class ETL_C_FIVE_G {
 			runCLPScript(central_No, "GENERATE", "ACCOUNT");
 			runCLPScript(central_No, "GENERATE", "ACCOUNT_PROPERTY");
 			runCLPScript(central_No, "GENERATE", "BALANCE");
-			runCLPScript(central_No, "GENERATE", "CALENDAR");
 			runCLPScript(central_No, "GENERATE", "LOAN");
 			runCLPScript(central_No, "GENERATE", "LOAN_COLLATERAL");
 			runCLPScript(central_No, "GENERATE", "LOAN_DETAIL");
@@ -71,7 +69,7 @@ public class ETL_C_FIVE_G {
 	}
 	
 	// 除舊佈新五代Table
-	public static boolean renew5GTable(Date oldDate, Date newDate, String central_No, String tableType) {
+	public static boolean renew5GTable(Date dropDate, Date newDate, String central_No, String tableType) {
 		// tableType 預定有兩種 temp, rerun(temp:正常ETL使用, rerun:Rerun使用)
 		
 		try {
@@ -80,28 +78,26 @@ public class ETL_C_FIVE_G {
 //			newDate = ETL_Tool_StringX.toUtilDate("20180112");
 
 			// 產生新一代Table Script
-			createPasteTableCLPScript(oldDate, newDate, central_No, "ACCOUNT", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "ACCOUNT_PROPERTY", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "BALANCE", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "CALENDAR", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "LOAN", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "LOAN_COLLATERAL", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "LOAN_DETAIL", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "LOAN_GUARANTOR", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "LOAN_MASTER", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "PARTY", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "PARTY_ACCOUNT_REL", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "PARTY_ADDRESS", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "PARTY_EMAIL", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "PARTY_NATIONALITY", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "PARTY_PARTY_REL", tableType);
-			createPasteTableCLPScript(oldDate, newDate, central_No, "PARTY_PHONE", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "ACCOUNT", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "ACCOUNT_PROPERTY", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "BALANCE", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "LOAN", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "LOAN_COLLATERAL", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "LOAN_DETAIL", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "LOAN_GUARANTOR", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "LOAN_MASTER", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY_ACCOUNT_REL", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY_ADDRESS", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY_EMAIL", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY_NATIONALITY", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY_PARTY_REL", tableType);
+			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY_PHONE", tableType);
 				
 			// 執行Script
 			runCLPScript(central_No, "RENEW", "ACCOUNT");
 			runCLPScript(central_No, "RENEW", "ACCOUNT_PROPERTY");
 			runCLPScript(central_No, "RENEW", "BALANCE");
-			runCLPScript(central_No, "RENEW", "CALENDAR");
 			runCLPScript(central_No, "RENEW", "LOAN");
 			runCLPScript(central_No, "RENEW", "LOAN_COLLATERAL");
 			runCLPScript(central_No, "RENEW", "LOAN_DETAIL");
@@ -163,7 +159,7 @@ public class ETL_C_FIVE_G {
 	}
 	
 	// create 五代Table除舊佈新指令(Script)
-	private static boolean createPasteTableCLPScript(Date newDate, Date dropDate, String central_No, String runTableName, String tableType) {
+	private static boolean createPasteTableCLPScript(Date dropDate, Date newDate, String central_No, String runTableName, String tableType) {
 		
 		System.out.println("建立  汰換5代Table Script - " + central_No + " - " + runTableName + " - " + tableType + " Start");
 		
@@ -181,7 +177,11 @@ public class ETL_C_FIVE_G {
 			pasteMap.put(3, ETL_Tool_StringX.toUtilDateStr(newDate, "yyyy-MM-dd"));
 			pasteMap.put(4, ETL_Tool_StringX.toUtilDateStr(newDate, "yyyy-MM-dd"));
 			pasteMap.put(5, tableType);
-			pasteMap.put(6, ETL_Tool_StringX.toUtilDateStr(dropDate, "yyyyMMdd"));
+			if (dropDate == null) {
+				pasteMap.put(6, null);
+			} else {
+				pasteMap.put(6, ETL_Tool_StringX.toUtilDateStr(dropDate, "yyyyMMdd"));
+			}
 			
 			pasteBean.setMap(pasteMap);
 			
@@ -210,6 +210,10 @@ public class ETL_C_FIVE_G {
 		InputStreamReader isr;
 		try {
 
+			if (!destinationFile.getParentFile().isDirectory()) {
+				destinationFile.getParentFile().mkdirs();
+			}
+			
 			if (!destinationFile.exists()) {
 				destinationFile.createNewFile();
 			}
@@ -228,7 +232,14 @@ public class ETL_C_FIVE_G {
 			
 			// 問號數量初始直
 			int count = 1;
+			int lineCount = 1;
 			while ((line = br.readLine()) != null) {
+				
+				// 為Paste特製
+				if (lineCount == 4 && count == 6 && bean.getMap().get(count) == null) {
+					continue;
+				}
+				
 				// 如果此行有 ? 符號 且 有 declare 放入 oldDate
 				if (line.contains("?")) {
 					
@@ -264,6 +275,8 @@ public class ETL_C_FIVE_G {
 
 				}
 				sb.append(line);
+				
+				lineCount++;
 			}
 			
 		
@@ -291,13 +304,17 @@ public class ETL_C_FIVE_G {
 	private static void runCLPScript(String central_No, String runType, String runTableName) throws Exception {
 		String scriptName = runType + "_" + runTableName + ".sql";
 		
-		System.out.println("執行 " + scriptName + " Start");
+		System.out.println("執行 " + scriptName + " Start " + new Date());
 		
-		// for test
-		System.out.println("db2cmd -c -i db2 -tvmf " + ETL_Profile.ETL_E_CLP_RUN_SCRIPT_FILE_PATH + "/" + central_No + "/" + scriptName);
-		runProcess("db2cmd -c -i db2 -tvmf " + ETL_Profile.ETL_E_CLP_RUN_SCRIPT_FILE_PATH + "/" + central_No + "/" + scriptName);
+		try {
+			// for test
+			System.out.println("db2cmd -c -i db2 -tvmf " + ETL_Profile.ETL_E_CLP_RUN_SCRIPT_FILE_PATH + central_No + "/" + scriptName);
+			runProcess("db2cmd -c -i db2 -tvmf " + ETL_Profile.ETL_E_CLP_RUN_SCRIPT_FILE_PATH + central_No + "/" + scriptName);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 		
-		System.out.println("執行 " + scriptName + " End");
+		System.out.println("執行 " + scriptName + " End" + new Date());
 	}
 	
 	// 執行指令(Script)
@@ -339,6 +356,8 @@ public class ETL_C_FIVE_G {
 	}
 	
 	public static void main(String[] argv) throws Exception {
+		
+//		renew5GTable(ETL_Tool_StringX.toUtilDate("20180111"), ETL_Tool_StringX.toUtilDate("20180430"), "605", "TEMP");
 		
 //		System.out.println("##########################################");
 //		

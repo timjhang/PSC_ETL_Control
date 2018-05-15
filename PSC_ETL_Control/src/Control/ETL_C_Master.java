@@ -20,6 +20,7 @@ import DB.ConnectionHelper;
 import FTP.ETL_SFTP;
 import Profile.ETL_Profile;
 import Tool.ETL_Tool_FormatCheck;
+import Tool.ETL_Tool_StringX;
 
 public class ETL_C_Master {
 
@@ -72,8 +73,8 @@ public class ETL_C_Master {
 		Date record_date;
 		Date before_record_date;
 		try {
-			before_record_date = new SimpleDateFormat("yyyyMMdd").parse("20180426");
-			record_date = new SimpleDateFormat("yyyyMMdd").parse("20180427");
+			before_record_date = new SimpleDateFormat("yyyyMMdd").parse("20180409");
+			record_date = new SimpleDateFormat("yyyyMMdd").parse("20180410");
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			before_record_date = new Date();
@@ -107,8 +108,47 @@ public class ETL_C_Master {
 			System.out.println(readyCentralList.get(i));
 		}
 		
+		String[] ptr_upload_no = new String[1];
+		
 		// 指定ETL任務
-		ETL_C_PROCESS.executeETL(etlServerList.get(0), batchNo, readyCentralList.get(0), record_date, before_record_date);
+		ETL_C_PROCESS.executeETL(etlServerList.get(0), batchNo, readyCentralList.get(0), ptr_upload_no, record_date, before_record_date);
+		
+		boolean add5GSuccess = false;
+		
+		// 執行暫存Table(load_temp)併入五代
+		add5GSuccess = addNew5G(batchNo, record_date, readyCentralList.get(0), ptr_upload_no[0], "TEMP");
+		
+//		// for test
+////		boolean add5GSuccess = false;
+////		try {
+////			add5GSuccess = addNew5G(ETL_Tool_StringX.toUtilDate("20180411"), "600", "002", "TEMP");
+////		} catch (Exception ex) {
+////			ex.printStackTrace();
+////		}
+		
+		// 執行正常完整, 則寫入
+		if (add5GSuccess) {
+			
+			// 寫入ETL完成紀錄ETL_LOAD_GAML
+			boolean isSuccess;
+			isSuccess = write_ETL_LOAD_GAML(batchNo, record_date, readyCentralList.get(0), ptr_upload_no[0]);
+			
+			System.out.println("batchNo = " + batchNo + " , record_date = " + record_date 
+					+ " , central_no = " + readyCentralList.get(0) + " , upload_no = " + ptr_upload_no[0]);
+			if (isSuccess) {
+				System.out.println("寫入ETL_LOAD_GAML成功!");
+			} else {
+				System.out.println("寫入ETL_LOAD_GAML成功!");
+			}
+			
+		}
+		
+		// 清除交易性主檔180天前資料
+		if (remove_OLD_Datas(readyCentralList.get(0))) {
+			System.out.print(readyCentralList.get(0) + " 刪除交易性舊資料  成功!!");
+		} else {
+			System.out.print(readyCentralList.get(0) + " 刪除交易性舊資料  失敗!!");
+		}
 		
 		System.out.println("#### ETL_C_Master End");
 	}
@@ -521,8 +561,199 @@ public class ETL_C_Master {
 		
 	}
 	
+	// 執行暫存Table(load_temp)併入五代
+	private static boolean addNew5G(String batch_no, Date record_date, String central_no, String upload_no, String tableType) {
+		
+		try {
+			// 確認ETL是否執行正確無誤
+			if (!checkETLright(batch_no, record_date, central_no, upload_no)) {
+				System.out.println("單位:" + central_no + " , 資料日期:" + new SimpleDateFormat("yyyyMMdd").format(record_date) + " , 上傳批號:" + upload_no + 
+						"\nETL處理中有出現錯誤，不執行五代合併程式!");
+				return false;
+			}
+			
+			// 查詢partition狀況, 取得分割數量(5個以上才做處理) & 最早的檔名(yyyyMMdd)
+			String[] partition_Info = new String[3];
+			if (!guery_GAML_Partition_Info(central_no, partition_Info)) {
+				System.out.println("取得partition訊息出現錯誤，返回不繼續執行！");
+				return false;
+			}
+			
+			// 欲drop資料日期
+			Date dropDate = null;
+			
+			if (Integer.valueOf(partition_Info[0]) > 5) {
+				dropDate = ETL_Tool_StringX.toUtilDate(partition_Info[1]);
+			}
+			
+			// 執行併回
+			ETL_C_FIVE_G.renew5GTable(dropDate, record_date, central_no, tableType);
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return false;
+		}
+		
+		return true;
+	}
+	
+	// 確認ETL是否執行正確無誤
+	private static boolean checkETLright(String batch_no, Date record_date, String central_no, String upload_no) {
+		try {
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.guery_ETL_Run_Result(?,?,?,?,?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection();
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setString(2, batch_no);
+			cstmt.setDate(3, new java.sql.Date(record_date.getTime()));
+			cstmt.setString(4, central_no);
+			cstmt.setString(5, upload_no);
+			cstmt.registerOutParameter(6, Types.VARCHAR);
+			cstmt.registerOutParameter(7, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(7);
+	            System.out.println("####checkETLright - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            return false;
+			}
+			
+			String right = cstmt.getString(6);
+			if ("Y".equals(right)) {
+				return true;
+			} else {
+				return false;
+			}
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return false;
+		}
+	}
+	
+	// 查詢partition狀況, 取得分割數量(5個以上才做處理) & 最早的檔名(yyyyMMdd)
+	private static boolean guery_GAML_Partition_Info (String central_no, String[] partition_Info) {
+		
+		try {
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.guery_GAML_Partition_Info(?,?,?,?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection();
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setString(2, central_no);
+			cstmt.registerOutParameter(3, Types.INTEGER);
+			cstmt.registerOutParameter(4, Types.VARCHAR);
+			cstmt.registerOutParameter(5, Types.VARCHAR);
+			cstmt.registerOutParameter(6, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(6);
+	            System.out.println("####guery_GAML_Partition_Info - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            return false;
+			}
+			
+			int partiCount = cstmt.getInt(3);
+			String partiFirstName = cstmt.getString(4);
+			String partiLastName = cstmt.getString(5);
+			
+			System.out.println("partiCount = " + partiCount);
+			System.out.println("partiFirstName = " + partiFirstName);
+			System.out.println("partiLastName = " + partiLastName);
+			
+			partition_Info[0] = String.valueOf(partiCount);
+			partition_Info[1] = partiFirstName;
+			partition_Info[2] = partiLastName;
+			
+			return true;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return false;
+		}
+	}
+	
+	// 寫入ETL完成紀錄
+	private static boolean write_ETL_LOAD_GAML(String batch_no, Date record_date, String central_no, String upload_no) {
+		
+		try {
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.write_ETL_LOAD_GAML(?,?,?,?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection();
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setString(2, central_no);
+			cstmt.setDate(3, new java.sql.Date(record_date.getTime()));
+			cstmt.setString(4, central_no);
+			cstmt.setString(5, upload_no);
+			cstmt.registerOutParameter(6, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(6);
+	            System.out.println("####write_ETL_LOAD_GAML - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            return false;
+			}
+			
+			return true;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return false;
+		}
+	}
+	
+	// 清除交易性主檔180天前資料
+	private static boolean remove_OLD_Datas(String central_no) {
+		
+		try {
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Load.remove_OLD_Datas(?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection(central_no);
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.registerOutParameter(2, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(2);
+	            System.out.println("####remove_OLD_Datas - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            return false;
+			}
+			
+			return true;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return false;
+		}
+	}
+	
 	public static void main(String[] args) {
-		execute();
+		try {
+			addNew5G("ETL01020", ETL_Tool_StringX.toUtilDate("20180508"), "605", "001", "TEMP");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 
 }
