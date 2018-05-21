@@ -73,8 +73,8 @@ public class ETL_C_Master {
 		Date record_date;
 		Date before_record_date;
 		try {
-			before_record_date = new SimpleDateFormat("yyyyMMdd").parse("20180409");
-			record_date = new SimpleDateFormat("yyyyMMdd").parse("20180410");
+			before_record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Before_Record_Date_Str);
+			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Record_Date_Str);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			before_record_date = new Date();
@@ -118,13 +118,17 @@ public class ETL_C_Master {
 		// 執行暫存Table(load_temp)併入五代
 		add5GSuccess = addNew5G(batchNo, record_date, readyCentralList.get(0), ptr_upload_no[0], "TEMP");
 		
-//		// for test
-////		boolean add5GSuccess = false;
-////		try {
-////			add5GSuccess = addNew5G(ETL_Tool_StringX.toUtilDate("20180411"), "600", "002", "TEMP");
-////		} catch (Exception ex) {
-////			ex.printStackTrace();
-////		}
+		// for test
+//		boolean add5GSuccess = false;
+//		try {
+//			add5GSuccess = addNew5G("ETL01034", ETL_Tool_StringX.toUtilDate("20180411"), "018", "001", "TEMP");
+//		} catch (Exception ex) {
+//			ex.printStackTrace();
+//		}
+//		runStateSRC("018");
+		
+		// 執行runstate程式
+		runStateSRC(readyCentralList.get(0));
 		
 		// 執行正常完整, 則寫入
 		if (add5GSuccess) {
@@ -143,12 +147,12 @@ public class ETL_C_Master {
 			
 		}
 		
-		// 清除交易性主檔180天前資料
-		if (remove_OLD_Datas(readyCentralList.get(0))) {
-			System.out.print(readyCentralList.get(0) + " 刪除交易性舊資料  成功!!");
-		} else {
-			System.out.print(readyCentralList.get(0) + " 刪除交易性舊資料  失敗!!");
-		}
+		// 清除交易性主檔180天前資料  // 第一次不開啟    2018.05.16  test  temp
+//		if (remove_OLD_Datas(readyCentralList.get(0))) {
+//			System.out.print(readyCentralList.get(0) + " 刪除交易性舊資料  成功!!");
+//		} else {
+//			System.out.print(readyCentralList.get(0) + " 刪除交易性舊資料  失敗!!");
+//		}
 		
 		System.out.println("#### ETL_C_Master End");
 	}
@@ -565,12 +569,13 @@ public class ETL_C_Master {
 	private static boolean addNew5G(String batch_no, Date record_date, String central_no, String upload_no, String tableType) {
 		
 		try {
-			// 確認ETL是否執行正確無誤
-			if (!checkETLright(batch_no, record_date, central_no, upload_no)) {
-				System.out.println("單位:" + central_no + " , 資料日期:" + new SimpleDateFormat("yyyyMMdd").format(record_date) + " , 上傳批號:" + upload_no + 
-						"\nETL處理中有出現錯誤，不執行五代合併程式!");
-				return false;
-			}
+			// for test
+//			// 確認ETL是否執行正確無誤
+//			if (!checkETLright(batch_no, record_date, central_no, upload_no)) {
+//				System.out.println("單位:" + central_no + " , 資料日期:" + new SimpleDateFormat("yyyyMMdd").format(record_date) + " , 上傳批號:" + upload_no + 
+//						"\nETL處理中有出現錯誤，不執行五代合併程式!");
+//				return false;
+//			}
 			
 			// 查詢partition狀況, 取得分割數量(5個以上才做處理) & 最早的檔名(yyyyMMdd)
 			String[] partition_Info = new String[3];
@@ -718,6 +723,36 @@ public class ETL_C_Master {
 		}
 	}
 	
+	// 將中心src Table 進行runstate
+	private static void runStateSRC(String central_no) {
+		System.out.println("執行 runStateSRC " + central_no + " Start");
+		
+		try {
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Load.runStateSRC(?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection(central_no);
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.registerOutParameter(2, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(2);
+	            System.out.println("####runStateSRC - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+			}
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+		System.out.println("執行 runStateSRC " + central_no + " End");
+	}
+	
 	// 清除交易性主檔180天前資料
 	private static boolean remove_OLD_Datas(String central_no) {
 		
@@ -749,11 +784,17 @@ public class ETL_C_Master {
 	}
 	
 	public static void main(String[] args) {
-		try {
-			addNew5G("ETL01020", ETL_Tool_StringX.toUtilDate("20180508"), "605", "001", "TEMP");
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+//		System.out.println("ETL_C_Master 測試開始!");
+//		
+//		boolean add5GSuccess = false;
+//		try {
+//			add5GSuccess = addNew5G("ETL01034", ETL_Tool_StringX.toUtilDate("20180411"), "018", "001", "TEMP");
+//		} catch (Exception ex) {
+//			ex.printStackTrace();
+//		}
+//		runStateSRC("018");
+//		
+//		System.out.println("ETL_C_Master 測試結束!");
 	}
 
 }

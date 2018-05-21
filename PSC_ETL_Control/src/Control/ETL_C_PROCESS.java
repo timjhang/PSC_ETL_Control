@@ -4,7 +4,11 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+
+import com.ibm.db2.jcc.DB2Types;
 
 import Bean.ETL_Bean_LogData;
 import Bean.ETL_Bean_Response;
@@ -56,6 +60,8 @@ public class ETL_C_PROCESS {
 		}
 		
 		try {
+			// 更新 新5代製作紀錄檔
+			updateNewGenerationETLStatus(record_Date, central_no, "Start", "");
 			
 			// 呼叫ETL Server進行initial作業
 			if (!ETL_C_CallWS.call_ETL_Server_initETLserver(etlServerInfo[2])) {
@@ -121,9 +127,12 @@ public class ETL_C_PROCESS {
 			// 更新 L Master Log
 			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "L", "E", "Y", "");
 
-		
+			// 更新 新5代製作紀錄檔
+			updateNewGenerationETLStatus(record_Date, central_no, "End", "");
+			
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			updateNewGenerationETLStatus(record_Date, central_no, "Error", ex.getMessage());
 			exeResult = false;
 		} finally {
 			// 更新報送單位狀態"執行完畢"
@@ -336,17 +345,33 @@ public class ETL_C_PROCESS {
 			System.out.println("runTable:" + runTable);
 
 			// 執行20支L系列程式
+			if ("018".equals(exc_central_no.trim())) {
+				ETL_Bean_LogData logData2 = new ETL_Bean_LogData();
+				logData2.setBATCH_NO(logData.getBATCH_NO());
+				logData2.setFILE_TYPE(logData.getFILE_TYPE());
+				logData2.setRECORD_DATE(logData.getRECORD_DATE());
+				logData2.setUPLOAD_NO(logData.getUPLOAD_NO());
+				logData2.setBEFORE_ETL_PROCESS_DATE(logData.getBEFORE_ETL_PROCESS_DATE());
+				
+				List<String> central_list = getUsableCentralList(exc_record_date);
+				
+				for (int i = 0; i < central_list.size(); i++) {
+					logData2.setCENTRAL_NO(central_list.get(i));
+					
+					// 更新7個單位日曆檔 & 匯率檔
+					logData.setPROGRAM_NO("ETL_L_CALENDAR");
+					new ETL_L_CALENDAR().trans_to_CALENDAR_LOAD(logData2, fedServer, runTable);
+					
+					logData.setPROGRAM_NO("ETL_L_FX_RATE");
+					new ETL_L_FX_RATE().trans_to_FX_RATE_LOAD(logData2, fedServer, runTable);
+				}
+			}
+			
 			logData.setPROGRAM_NO("ETL_L_PARTY_PHONE");
 			new ETL_L_PARTY_PHONE().trans_to_PARTY_PHONE_LOAD(logData, fedServer, runTable);
 			
-			logData.setPROGRAM_NO("ETL_L_CALENDAR");
-			new ETL_L_CALENDAR().trans_to_CALENDAR_LOAD(logData, fedServer, runTable);
-			
 			logData.setPROGRAM_NO("ETL_L_COLLATERAL");
 			new ETL_L_COLLATERAL().trans_to_COLLATERAL_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_FX_RATE");
-			new ETL_L_FX_RATE().trans_to_FX_RATE_LOAD(logData, fedServer, runTable);
 			
 			logData.setPROGRAM_NO("ETL_L_LOAN_DETAIL");
 			new ETL_L_LOAN_DETAIL().trans_to_LOAN_DETAIL_LOAD(logData, fedServer, runTable);
@@ -406,6 +431,87 @@ public class ETL_C_PROCESS {
 		}
 		System.out.println("call_ETL_Server_Lfunction : 結束");
 		return true;
+	}
+	
+	// 更新5代Table 記錄檔  prepare status
+	private static boolean updateNewGenerationETLStatus(Date record_date, String central_no, String etlStatus, String discription) {
+		
+		try {
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.update_New_Generation_ETL_Status(?,?,?,?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection();
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setDate(2, new java.sql.Date(record_date.getTime()));
+			cstmt.setString(3, central_no);
+			cstmt.setString(4, etlStatus);
+			cstmt.setString(5, discription);
+			cstmt.registerOutParameter(6, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(6);
+	            System.out.println("####writeNewGenerationStatus - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            return false;
+			}
+			
+			return true;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return false;
+		}
+	}
+	
+	// 取得需進行ETL作業中心代號
+	private static List<String> getUsableCentralList(Date recordDate) {
+		List<String> resultList = new ArrayList<String>();
+		
+		try {
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.getUsableCentral(?,?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection();
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setDate(2, new java.sql.Date(recordDate.getTime()));
+			cstmt.registerOutParameter(3, DB2Types.CURSOR);
+			cstmt.registerOutParameter(4, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(4);
+	            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+//	            throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            return resultList;
+			}
+			
+			java.sql.ResultSet rs = (java.sql.ResultSet) cstmt.getObject(3);
+			while (rs.next()) {
+	        	String central_no = rs.getString(1);
+	        	if (central_no != null) {
+	        		central_no = central_no.trim();
+	        	}
+	        	resultList.add(central_no);
+	        }
+	        
+//	        System.out.println("List Size = " + resultList.size()); // for test
+		
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+		return resultList;
 	}
 	
 	public static void main(String[] argv) {

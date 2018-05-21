@@ -6,10 +6,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.Types;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 
 import Bean.ETL_Bean_CLP_Script;
+import DB.ConnectionHelper;
 import Profile.ETL_Profile;
 import Tool.ETL_Tool_StringX;
 
@@ -25,6 +30,16 @@ public class ETL_C_FIVE_G {
 //			newDate = ETL_Tool_StringX.toUtilDate("20180112");
 
 			boolean isSuccess = true;
+			
+			// 寫入5代Table 記錄檔
+			if (!writeNewGenerationStatus(newDate, central_No)) {
+				System.out.println("####ETL_C_FIVE_G - 寫入NewGenerationStatus紀錄失敗，不繼續作業!!");
+				return false;
+			}
+			
+			if (!detachTablePartiton(central_No, newDate)) {
+				throw new Exception("detach partition " + central_No + " " + new SimpleDateFormat("yyyyMMdd").format(newDate) + " 出現錯誤!");
+			}
 			
 			// 產生新一代Table Script
 			createCopyTableCLPScript(oldDate, newDate, central_No, "ACCOUNT", tableType);
@@ -59,9 +74,13 @@ public class ETL_C_FIVE_G {
 			runCLPScript(central_No, "GENERATE", "PARTY_NATIONALITY");
 			runCLPScript(central_No, "GENERATE", "PARTY_PARTY_REL");
 			runCLPScript(central_No, "GENERATE", "PARTY_PHONE");
+			
+			// 更新5代Table 記錄檔
+			updateNewGenerationPrepareStatus(newDate, central_No, "End", "");
 				
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			updateNewGenerationPrepareStatus(newDate, central_No, "Error", ex.getMessage());
 			return false;
 		}
 		
@@ -355,7 +374,115 @@ public class ETL_C_FIVE_G {
 		
 	}
 	
+	// 寫入5代Table 記錄檔
+	private static boolean writeNewGenerationStatus(Date record_date, String central_no) {
+		
+		try {
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.write_New_Generation_Status(?,?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection();
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setDate(2, new java.sql.Date(record_date.getTime()));
+			cstmt.setString(3, central_no);
+			cstmt.registerOutParameter(4, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(4);
+	            System.out.println("####writeNewGenerationStatus - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            return false;
+			}
+			
+			return true;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return false;
+		}
+	}
+	
+	// 更新5代Table 記錄檔  prepare status
+	private static boolean updateNewGenerationPrepareStatus(Date record_date, String central_no, String prepareStatus, String discription) {
+		
+		try {
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.update_New_Generation_Prepare_Status(?,?,?,?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection();
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setDate(2, new java.sql.Date(record_date.getTime()));
+			cstmt.setString(3, central_no);
+			cstmt.setString(4, prepareStatus);
+			cstmt.setString(5, discription);
+			cstmt.registerOutParameter(6, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(6);
+	            System.out.println("####writeNewGenerationStatus - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            return false;
+			}
+			
+			return true;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return false;
+		}
+	}
+	
+	private static boolean detachTablePartiton(String central_no, Date recordDate) {
+		
+		try {
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".new5G_Service.detach_Table_Partiton(?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection(central_no);
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setDate(2, new java.sql.Date(recordDate.getTime()));
+			cstmt.registerOutParameter(3, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(3);
+	            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+//	            throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            return false;
+			}
+			
+			System.out.println("detach " + central_no +  " partition " + new SimpleDateFormat("yyyyMMdd").format(recordDate) +  " 成功!!");
+			return true;
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return false;
+		}
+	}
+	
 	public static void main(String[] argv) throws Exception {
+		
+//		System.out.println("測試開始！");
+//		
+//		detachTablePartiton("952", new SimpleDateFormat("yyyyMMdd").parse("20180515"));
+//		
+//		System.out.println("測試結束！");
 		
 //		renew5GTable(ETL_Tool_StringX.toUtilDate("20180111"), ETL_Tool_StringX.toUtilDate("20180430"), "605", "TEMP");
 		
@@ -393,6 +520,23 @@ public class ETL_C_FIVE_G {
 //		} else {
 //			System.out.println("create Paste CLPScript ERROR!");
 //		}
+		
+		// FOR TEST
+		boolean isSucess;
+		Date dropDate = ETL_Tool_StringX.toUtilDate("20180101");
+		Date newDate = ETL_Tool_StringX.toUtilDate("20180412");
+		
+		isSucess = createPasteTableCLPScript(dropDate, newDate, "018", "BALANCE", "TEMP");
+//		isSucess = createPasteTableCLPScript(dropDate, newDate, "018", "PARTY_PARTY_REL", "RERUN");
+
+		if (isSucess) {
+			
+			runCLPScript("018", "RENEW", "BALANCE");
+//			runCLPScript(central_No, "RENEW", "PARTY_PARTY_REL");
+			
+		} else {
+			System.out.println("create Paste CLPScript ERROR!");
+		}
 		
 	}
 

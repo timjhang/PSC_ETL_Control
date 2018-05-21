@@ -108,4 +108,8 @@ public class ETL_Profile {
 	public final static String ETL_E_CLP_MODEL_SCRIPT_FILE_PATH = "C:/ETL/L_Script/model/";
 	public final static String ETL_E_CLP_RUN_SCRIPT_FILE_PATH = "C:/ETL/L_Script/run/";
 	
+	// for test
+	public final static String Before_Record_Date_Str = "20180411";
+	public final static String Record_Date_Str = "20180412";
+	
 }

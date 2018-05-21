@@ -81,7 +81,7 @@
 	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
 			<list>
-				<!-- <ref local="MasterTrigger" /> -->
+				<ref local="MasterTrigger" />
 				<ref local="New5GTrigger" />
 			</list>
 		</property>

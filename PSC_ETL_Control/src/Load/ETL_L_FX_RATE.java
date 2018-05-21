@@ -11,16 +11,14 @@ import Profile.ETL_Profile;
 import Tool.ETL_Tool_CastObjUtil;
 
 public class ETL_L_FX_RATE {
-
 	
-	// 觸發DB2載入Procedure, 資料載入FX_RATE_LOAD_TEMP  // TODO
+	// 觸發DB2載入Procedure, 資料載入FX_RATE_LOAD_TEMP
 	public void trans_to_FX_RATE_LOAD(ETL_Bean_LogData logData, String fedServer, String runTable) {
 		
-		System.out.println("#######Load - ETL_L_FX_RATE - Start"); // TODO
+		System.out.println("#######Load - ETL_L_FX_RATE - Start");
 		
 		try {
 			
-			// TODO
 			String sql = "{call " + ETL_Profile.db2TableSchema + ".Load.loadETL_FX_RATE_LOAD(?,?,?,?,?)}";
 			
 			Connection con = ConnectionHelper.getDB2Connection(logData.getCENTRAL_NO().trim());
@@ -43,13 +41,15 @@ public class ETL_L_FX_RATE {
 	            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
 			}
 			
+			System.out.println("更新匯率檔 - 單位 : " + logData.getCENTRAL_NO().trim() + " 成功！");
+			
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			System.out.println("更新匯率檔 - 單位 : " + logData.getCENTRAL_NO().trim() + " 失敗！");
 		}
 		
-		System.out.println("#######Load - ETL_L_FX_RATE - End"); // TODO
+		System.out.println("#######Load - ETL_L_FX_RATE - End");
 		
 	}
-
 
 }
