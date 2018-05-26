@@ -9,6 +9,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import org.dom4j.Document;
@@ -152,16 +154,20 @@ public class ETL_C_CallWS {
 	}
 	
 	// 呼叫ETL Server getUploadFile, 並取得下載檔案資訊
-	public static ETL_Bean_Response call_ETL_Server_getUploadFileInfo(String ip_port, String centralNo) {
+	public static ETL_Bean_Response call_ETL_Server_getUploadFileInfo(String ip_port, String centralNo, String runType, Date rerunRecordDate) {
 		ETL_Bean_Response response = new ETL_Bean_Response();
 		String[] fileInfoAry = new String[3];
-	
+		
 		try {
 //			URL url = new URL("http://localhost:8083/AML_ETL/rest/getUploadFile/WS1");
-			System.out.println("call_ETL_Server_Efunction : 開始執行");
+			System.out.println("call_ETL_Server_getUploadFileInfo : 開始執行");
 
 			String urlStr = "http://" + ip_port + "/AML_ETL/rest/getUploadFile/WS1?";
 			urlStr = urlStr + "centralNo=" + centralNo;
+			if ("RERUN".equals(runType)) {
+				urlStr = urlStr + "&runType=RERUN";
+				urlStr = urlStr + "&rerunRecordDate=" + new SimpleDateFormat("yyyyMMdd").format(rerunRecordDate);
+			}
 			
 			System.out.println("urlStr = " + urlStr);
 			URL url = new URL(urlStr);
@@ -250,7 +256,7 @@ public class ETL_C_CallWS {
 			
 			conn.disconnect();
 			
-			System.out.println("call_ETL_Server_Efunction : 執行成功！");
+			System.out.println("call_ETL_Server_getUploadFileInfo : 執行成功！");
 			
 			
 			//TODO FOR TEST
@@ -267,15 +273,15 @@ public class ETL_C_CallWS {
 
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
-			System.out.println("call_ETL_Server_Efunction : 發生錯誤");
+			System.out.println("call_ETL_Server_getUploadFileInfo : 發生錯誤");
 			return response;
 		} catch (IOException e) {
 			e.printStackTrace();
-			System.out.println("call_ETL_Server_Efunction : 發生錯誤");
+			System.out.println("call_ETL_Server_getUploadFileInfo : 發生錯誤");
 			return response;
 		} catch (DocumentException e) {
 			e.printStackTrace();
-			System.out.println("call_ETL_Server_Efunction : 發生錯誤");
+			System.out.println("call_ETL_Server_getUploadFileInfo : 發生錯誤");
 			return response;
 		}
 		

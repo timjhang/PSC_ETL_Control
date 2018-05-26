@@ -49,9 +49,7 @@ public class KevinTest {
 		logData.setRECORD_DATE(new SimpleDateFormat("yyyyMMdd").parse("20171206"));
 		logData.setUPLOAD_NO("001");
 		
-	
-	
-		ETL_C_PROCESS.exeLfunction("ETL_S2", "001", "600", "20171206", "999", "20180331");
+//		ETL_C_PROCESS.exeLfunction("ETL_S2", "001", "600", "20171206", "999", "20180331");
 		
 	}
 

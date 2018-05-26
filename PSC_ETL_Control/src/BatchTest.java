@@ -30,7 +30,7 @@ public class BatchTest {
 	public void execute() {
 		System.out.println("######### Master_test Start");
 		
-		System.out.println("媽~我在這裡 @ Master_test");
+		System.out.println("這裡 @ Master_test");
 //		System.out.println(connectString);
 //		System.out.println(userName);
 //		System.out.println(password);

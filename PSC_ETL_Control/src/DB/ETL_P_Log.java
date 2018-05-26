@@ -1,12 +1,11 @@
 package DB;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 
 import Profile.ETL_Profile;
 
@@ -189,7 +188,6 @@ public class ETL_P_Log {
 
 	}
 	
-	
 	/**  ETL_FILE_Log  V3  2018.01.31  KevinChange
 	 * ETL_FILE_Log格式
 	 * @param BATCH_NO 批次編號
@@ -259,10 +257,6 @@ public class ETL_P_Log {
 		}
 
 	}
-	
-	
-	
-	
 
 	/**  未更新V2  2017.12.29  Tim Jhang
 	 * Error_Log格式
@@ -512,6 +506,26 @@ public class ETL_P_Log {
 		} else {
 			// 若無紀錄則回傳false
 			return false;
+		}
+		
+	}
+	
+	// 訊息寫入Runtime Log
+	public static void write_Runtime_Log(String runman, String log) {
+		
+		try {
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Tim.writeLog(?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2ConnGAML("DB");
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.setString(1, runman);
+			cstmt.setString(2, log);
+			
+			cstmt.execute();
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
 		}
 		
 	}

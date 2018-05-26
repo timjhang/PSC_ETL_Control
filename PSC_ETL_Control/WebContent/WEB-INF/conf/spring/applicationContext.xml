@@ -77,12 +77,33 @@
 		</property>
 	</bean>
 	
+	<!-- Rerun 控制程式 -->
+  	<bean id="jobDetailForRerunSchedule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<bean id="Rerun" class="Control.ETL_C_Rerun">
+			</bean>
+		</property>
+		<property name="targetMethod">
+			<value>execute</value>
+		</property>
+	</bean>
+	 
+	<bean id="RerunTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetailForRerunSchedule" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+	
 	<!-- 批次作業 -->
 	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
 			<list>
 				<ref local="MasterTrigger" />
 				<ref local="New5GTrigger" />
+				<!-- <ref local="RerunTrigger" /> -->
 			</list>
 		</property>
 	</bean>

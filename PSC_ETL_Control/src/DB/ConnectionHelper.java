@@ -38,21 +38,15 @@ public class ConnectionHelper {
 	// 連線DB2資料庫 GAMLDB
 	public static Connection getDB2Connection() throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 		
-//		String db2Driver = "com.ibm.db2.jcc.DB2Driver";
-//		String url = "jdbc:db2://172.18.21.206:50000/sample";
-//		String user = "Administrator";
-//		String password = "9ol.)P:?";
-//		Class.forName(db2Driver).newInstance();
-		
 		Class.forName(Profile.ETL_Profile.db2Driver).newInstance();
 		String url = Profile.ETL_Profile.db2Url;
 		String user = Profile.ETL_Profile.db2User;
 		String password = Profile.ETL_Profile.db2Password;
 		
-		System.out.println(user + " 連線  " + url + " ...");
+//		System.out.println(user + " 連線  " + url + " ...");
 		Connection con = DriverManager.getConnection(url, user, password);
 		con.setAutoCommit(true);
-		System.out.println(user + " 連線成功!!");
+//		System.out.println(user + " 連線成功!!");
 		
 		return con;
 	}
@@ -66,10 +60,10 @@ public class ConnectionHelper {
 		String user = Profile.ETL_Profile.db2User;
 		String password = Profile.ETL_Profile.db2Password;
 		
-		System.out.println(user + " 連線  " + url + " ...");
+//		System.out.println(user + " 連線  " + url + " ...");
 		Connection con = DriverManager.getConnection(url, user, password);
 		con.setAutoCommit(true);
-		System.out.println(user + " 連線成功!!");
+//		System.out.println(user + " 連線成功!!");
 		
 		return con;
 	}
@@ -81,10 +75,10 @@ public class ConnectionHelper {
 		String user = Profile.ETL_Profile.GAML_db2User;
 		String password = Profile.ETL_Profile.GAML_db2Password;
 		
-		System.out.println(user + " 連線  " + url + " ...");
+//		System.out.println(user + " 連線  " + url + " ...");
 		Connection con = DriverManager.getConnection(url, user, password);
 		con.setAutoCommit(true);
-		System.out.println(user + " 連線成功!!");
+//		System.out.println(user + " 連線成功!!");
 		
 		return con;
 	}

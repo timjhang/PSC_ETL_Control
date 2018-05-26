@@ -12,6 +12,7 @@ import java.util.List;
 import com.ibm.db2.jcc.DB2Types;
 
 import DB.ConnectionHelper;
+import DB.ETL_P_Log;
 import Profile.ETL_Profile;
 
 public class ETL_C_New5G {
@@ -28,17 +29,28 @@ public class ETL_C_New5G {
     		return;
     	}
     	
+    	// 若Rerun執行中則, 則ETL正常執行等待
+    	if (ETL_C_Master.isRerunExecuting()) {
+    		System.out.println("Rerun 作業進行中, 不進行ETL作業。");
+    		ETL_P_Log.write_Runtime_Log("ETL_C_Master", "Rerun 作業進行中, 不進行ETL作業。");
+    		return;
+    	}
+    	
     	System.out.println("####ETL_C_New5G Start " + new Date());
     	
+    	// 產生資料日期(昨天)
+//		Calendar cal = Calendar.getInstance(); // 今天時間
+//        cal.add(Calendar.DATE, -1); // 昨天時間
+//        Date record_date = cal.getTime();
+        
+    	
+    	
     	// for test
-//    	Date before_record_date;
-		Date record_date;
+    	Date record_date = new Date();
 		try {
-//			before_record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Before_Record_Date_Str);
 			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Before_Record_Date_Str);
 		} catch (Exception ex) {
 			ex.printStackTrace();
-//			before_record_date = new Date();
 			record_date = new Date();
 		}
     	
@@ -67,7 +79,7 @@ public class ETL_C_New5G {
 		}
     	
 		// 清除可能留下load temp Table
-		if (!clearLoadTempTable(central_list.get(0), "TEMP")) {
+		if (!clearLoadTable(central_list.get(0), "TEMP")) {
 			
 			System.out.println("清除相關Load Table 發生錯誤!");
 			return;
@@ -135,7 +147,8 @@ public class ETL_C_New5G {
 		return resultList;
 	}
 	
-	private static boolean clearLoadTempTable(String central_no, String tableType) {
+	// 應除Load Table
+	public static boolean clearLoadTable(String central_no, String tableType) {
 
 		try {
 			
@@ -169,25 +182,26 @@ public class ETL_C_New5G {
 		}
 	}
 	
+	
 	public static void main(String[] argvs) {
 		
 		try {
 			
-			Date[] dAry = new Date[2];
+//			Date[] dAry = new Date[2];
+//			
+//			List<String> list = getNeedNewG_LoadTemp_Central(new SimpleDateFormat("yyyyMMdd").parse("20180411"), dAry);
+//			
+//			System.out.println(dAry[0]);
+//			System.out.println(dAry[1]);
+//			System.out.println(list.size());
+//			
+//			if (list != null && list.size() > 0) {
+//				for (int i = 0; i < list.size(); i++) {
+//					System.out.println(list.get(i));
+//				}
+//			}
 			
-			List<String> list = getNeedNewG_LoadTemp_Central(new SimpleDateFormat("yyyyMMdd").parse("20180411"), dAry);
-			
-			System.out.println(dAry[0]);
-			System.out.println(dAry[1]);
-			System.out.println(list.size());
-			
-			if (list != null && list.size() > 0) {
-				for (int i = 0; i < list.size(); i++) {
-					System.out.println(list.get(i));
-				}
-			}
-			
-//			clearLoadTempTable("018", "TEMP");
+//			clearLoadTable("018", "TEMP");
 			
 			///////
 			

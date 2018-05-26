@@ -30,13 +30,13 @@ public class ETL_C_FIVE_G {
 //			newDate = ETL_Tool_StringX.toUtilDate("20180112");
 
 			boolean isSuccess = true;
-			
+
 			// 寫入5代Table 記錄檔
-			if (!writeNewGenerationStatus(newDate, central_No)) {
+			if (!writeStartGenerationStatus(newDate, central_No)) {
 				System.out.println("####ETL_C_FIVE_G - 寫入NewGenerationStatus紀錄失敗，不繼續作業!!");
 				return false;
 			}
-			
+				
 			if (!detachTablePartiton(central_No, newDate)) {
 				throw new Exception("detach partition " + central_No + " " + new SimpleDateFormat("yyyyMMdd").format(newDate) + " 出現錯誤!");
 			}
@@ -375,11 +375,11 @@ public class ETL_C_FIVE_G {
 	}
 	
 	// 寫入5代Table 記錄檔
-	private static boolean writeNewGenerationStatus(Date record_date, String central_no) {
+	private static boolean writeStartGenerationStatus(Date record_date, String central_no) {
 		
 		try {
 			
-			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.write_New_Generation_Status(?,?,?,?)}";
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.write_Start_Generation_Status(?,?,?,?)}";
 			
 			Connection con = ConnectionHelper.getDB2Connection();
 			CallableStatement cstmt = con.prepareCall(sql);
@@ -474,6 +474,43 @@ public class ETL_C_FIVE_G {
 			ex.printStackTrace();
 			return false;
 		}
+	}
+	
+	// 查詢是否寫過5代記錄檔
+	private static boolean hasRunGeneration(String central_no, Date record_date) throws Exception {
+		
+		String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.hasRunGeneration(?,?,?,?,?)}";
+		
+		Connection con = ConnectionHelper.getDB2Connection();
+		CallableStatement cstmt = con.prepareCall(sql);
+		
+		cstmt.registerOutParameter(1, Types.INTEGER);
+		cstmt.setString(2, central_no);
+		cstmt.setDate(3, new java.sql.Date(record_date.getTime()));
+		cstmt.registerOutParameter(4, Types.INTEGER);
+		cstmt.registerOutParameter(5, Types.VARCHAR);
+		
+		cstmt.execute();
+		
+		int returnCode = cstmt.getInt(1);
+		
+		// 有錯誤釋出錯誤訊息   不往下繼續進行
+		if (returnCode != 0) {
+			String errorMessage = cstmt.getString(5);
+            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+            throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+		}
+		
+		int hasRunCount = cstmt.getInt(4);
+		
+		if (hasRunCount > 0) {
+			// 有過紀錄回傳true
+			return true;
+		} else {
+			// 沒有記錄回傳false
+			return false;
+		}
+			
 	}
 	
 	public static void main(String[] argv) throws Exception {
