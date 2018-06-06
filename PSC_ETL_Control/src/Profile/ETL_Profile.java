@@ -117,7 +117,7 @@ public class ETL_Profile {
 			ETL_Tool_DES.decrypt("021d9d8f41af834dbbd0cc67793869649ee8d199407624c0");
 	
 	// for test
-	public final static String Before_Record_Date_Str = "20180521";
-	public final static String Record_Date_Str = "20180522";
+	public final static String Before_Record_Date_Str = "20180531";
+	public final static String Record_Date_Str = "20180601";
 	
 }

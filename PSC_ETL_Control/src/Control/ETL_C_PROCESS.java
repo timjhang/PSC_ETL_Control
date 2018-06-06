@@ -16,6 +16,7 @@ import DB.ConnectionHelper;
 import DB.ETL_P_Log;
 import Load.*;
 import Profile.ETL_Profile;
+import Tool.ETL_Tool_StringX;
 
 public class ETL_C_PROCESS {
 	
@@ -81,7 +82,7 @@ public class ETL_C_PROCESS {
 			if (!response.isSuccess()) {
 				throw new Exception("#### ETL_C_PROCESS - executeETL - call_ETL_Server_getUploadFileInfo 發生錯誤！ " + server_no);
 			}
-//			exc_record_dateStr = fileInfo[0];  // test  temp  2018.04.13 TimJhang
+
 			upload_no = fileInfo[1];
 			ptr_upload_no[0] = upload_no;
 			
@@ -126,6 +127,11 @@ public class ETL_C_PROCESS {
 			// 更新 L Master Log
 			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "L", "E", "Y", "");
 
+			
+			// 執行暫存Table(load_temp)併入五代
+			addNew5G(batch_No, record_Date, central_no, upload_no, "TEMP");
+			
+			
 			// 更新 新5代製作紀錄檔
 			updateNewGenerationETLStatus(record_Date, central_no, "End", "");
 			
@@ -220,7 +226,7 @@ public class ETL_C_PROCESS {
 			if (!response.isSuccess()) {
 				throw new Exception("#### ETL_C_PROCESS - executeETL - call_ETL_Server_getUploadFileInfo 發生錯誤！ " + server_no);
 			}
-//			exc_record_dateStr = fileInfo[0];  // test  temp  2018.04.13 TimJhang
+
 			upload_no = fileInfo[1];
 			ptr_upload_no[0] = upload_no;
 			
@@ -265,6 +271,11 @@ public class ETL_C_PROCESS {
 			// 更新 L Master Log
 			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "L", "E", "Y", "");
 
+			
+    		// 執行暫存Table(load_rerun)併入五代
+			addNew5G(batch_No, record_Date, central_no, upload_no, "RERUN");
+			
+			
 			// 更新 新5代製作紀錄檔
 			updateNewGenerationETLStatus(record_Date, central_no, "End", "");
 			
@@ -393,7 +404,7 @@ public class ETL_C_PROCESS {
 	}
 	
 	// 更新 Server 狀態使用中
-	private static void update_Server_Status(String server_No, String usable_Status) throws Exception {
+	public static void update_Server_Status(String server_No, String usable_Status) throws Exception {
 		
 		String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.update_Server_Status(?,?,?,?)}";
 		
@@ -494,7 +505,7 @@ public class ETL_C_PROCESS {
 	}
 	
 	// 執行L系列程式
-	public static boolean exeLfunction(String server_No, String batch_No, String exc_central_no, String record_DateStr,
+	private static boolean exeLfunction(String server_No, String batch_No, String exc_central_no, String record_DateStr,
 			String upload_No, String before_record_dateStr, String tableType) {
 		System.out.println("call_ETL_Server_Lfunction : 開始執行");
 		try {
@@ -550,6 +561,9 @@ public class ETL_C_PROCESS {
 					logData2.setPROGRAM_NO("ETL_L_FX_RATE");
 					new ETL_L_FX_RATE().trans_to_FX_RATE_LOAD(logData2, fedServer, runTable);
 				}
+				
+				// 更新GAMLDB上的日曆檔(Calendar)
+				copyCalendar_ToGAMLDB();
 			}
 			
 			logData.setPROGRAM_NO("ETL_L_PARTY_PHONE");
@@ -608,6 +622,8 @@ public class ETL_C_PROCESS {
 			
 			logData.setPROGRAM_NO("ETL_L_ERROR_LOG");
 			new ETL_L_ERROR_LOG().trans_to_Error_Log(logData, fedServer, runTable);
+			
+			supplementFX_Rate(logData);
 
 		} catch (Exception ex) {
 			System.out.println("call_ETL_Server_Lfunction : 發生錯誤");
@@ -704,19 +720,226 @@ public class ETL_C_PROCESS {
 		return resultList;
 	}
 	
-	public static void main(String[] argv) {
+	// 匯率檔檢查, 自動補充
+	private static void supplementFX_Rate(ETL_Bean_LogData logData) {
+		System.out.println("#######Load - supplementFX_Rate - Start");
 		try {
-			String[] serverInfo = new String[3];
-			serverInfo[0] = "ETL_S1";
-			serverInfo[1] = "test2";
-			serverInfo[2] = "127.0.0.1:8083";
-			Date date = new Date();
-			Date b_date = new Date();
-			String[] ptr_upload_no = new String[1];
-			executeETL(serverInfo, "tim18226", "600", ptr_upload_no, date, b_date);
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Load.supplementFX_Rate(?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection(logData.getCENTRAL_NO().trim());
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setDate(2, new java.sql.Date(logData.getRECORD_DATE().getTime()));
+			cstmt.registerOutParameter(3, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(3);
+	            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            ETL_P_Log.write_Runtime_Log("supplementFX_Rate", "Error Code = " + returnCode + ", Error Message : " + errorMessage);
+			}
+			
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+		System.out.println("#######Load - supplementFX_Rate - End");
+	}
+	
+	// 用GAML018上的日曆檔, 更新GAMLDB上的日曆檔
+	private static void copyCalendar_ToGAMLDB() {
+		System.out.println("#######Load - copyCalendar_ToGAMLDB - Start");
+		try {
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".GAMLDB.copyCalendar_ToGAMLDB(?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection();
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.registerOutParameter(2, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(2);
+	            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            ETL_P_Log.write_Runtime_Log("copyCalendar_ToGAMLDB", "Error Code = " + returnCode + ", Error Message : " + errorMessage);
+			}
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		System.out.println("#######Load - copyCalendar_ToGAMLDB - End");
+	}
+	
+	// 確認ETL是否執行正確無誤
+	private static boolean checkETLright(String batch_no, Date record_date, String central_no, String upload_no) {
+		try {
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.guery_ETL_Run_Result(?,?,?,?,?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection();
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setString(2, batch_no);
+			cstmt.setDate(3, new java.sql.Date(record_date.getTime()));
+			cstmt.setString(4, central_no);
+			cstmt.setString(5, upload_no);
+			cstmt.registerOutParameter(6, Types.VARCHAR);
+			cstmt.registerOutParameter(7, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(7);
+	            System.out.println("####checkETLright - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            ETL_P_Log.write_Runtime_Log("checkETLright", "####checkETLright - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            return false;
+			}
+			
+			String right = cstmt.getString(6);
+			if ("Y".equals(right)) {
+				return true;
+			} else {
+				return false;
+			}
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			ETL_P_Log.write_Runtime_Log("checkETLright", ex.getMessage());
+			return false;
+		}
+	}
+	
+	// 執行暫存Table(load_temp)併入五代
+	private static void addNew5G(String batch_no, Date record_date, String central_no, String upload_no, String tableType) throws Exception {
+		
+		try {
+			// test  temp
+			// 確認ETL是否執行正確無誤
+//			if (!checkETLright(batch_no, record_date, central_no, upload_no)) {
+//				System.out.println("單位:" + central_no + " , 資料日期:" + new SimpleDateFormat("yyyyMMdd").format(record_date) + " , 上傳批號:" + upload_no + 
+//						"\nETL處理中有出現錯誤，不執行五代合併程式!");
+//				return false;
+//			}
+			
+			// 查詢partition狀況, 取得分割數量(5個以上才做處理) & 最早的檔名(yyyyMMdd)
+			String[] partition_Info = new String[3];
+			if (!guery_GAML_Partition_Info(central_no, partition_Info)) {
+				System.out.println("取得partition訊息出現錯誤，返回不繼續執行！");
+				ETL_P_Log.write_Runtime_Log("addNew5G", "取得partition訊息出現錯誤，返回不繼續執行！");
+				throw new Exception("取得partition訊息出現錯誤，返回不繼續執行！");
+			}
+			
+			// 欲drop資料日期
+			Date dropDate = null;
+			
+			if (Integer.valueOf(partition_Info[0]) >= 5) {
+				dropDate = ETL_Tool_StringX.toUtilDate(partition_Info[1]);
+			}
+			
+			// 執行併回
+			ETL_C_FIVE_G.renew5GTable(dropDate, record_date, central_no, tableType);
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			ETL_P_Log.write_Runtime_Log("addNew5G", ex.getMessage());
+			throw new Exception(ex.getMessage());
+		}
+	}
+	
+	// 查詢partition狀況, 取得分割數量(5個以上才做處理) & 最早的檔名(yyyyMMdd)
+	private static boolean guery_GAML_Partition_Info (String central_no, String[] partition_Info) {
+		
+		try {
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.guery_GAML_Partition_Info(?,?,?,?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection();
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setString(2, central_no);
+			cstmt.registerOutParameter(3, Types.INTEGER);
+			cstmt.registerOutParameter(4, Types.VARCHAR);
+			cstmt.registerOutParameter(5, Types.VARCHAR);
+			cstmt.registerOutParameter(6, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(6);
+	            System.out.println("####guery_GAML_Partition_Info - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            ETL_P_Log.write_Runtime_Log("guery_GAML_Partition_Info", "####guery_GAML_Partition_Info - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            return false;
+			}
+			
+			int partiCount = cstmt.getInt(3);
+			String partiFirstName = cstmt.getString(4);
+			String partiLastName = cstmt.getString(5);
+			
+			System.out.println("partiCount = " + partiCount);
+			System.out.println("partiFirstName = " + partiFirstName);
+			System.out.println("partiLastName = " + partiLastName);
+			
+			partition_Info[0] = String.valueOf(partiCount);
+			partition_Info[1] = partiFirstName;
+			partition_Info[2] = partiLastName;
+			
+			return true;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			ETL_P_Log.write_Runtime_Log("guery_GAML_Partition_Info", ex.getMessage());
+			return false;
+		}
+	}
+	
+	public static void main(String[] argv) {
+		try {
+			
+			System.out.println("test Start");
+			
+//			copyCalendar_ToGAMLDB();
+			
+			String[] dateAry = new String[3];
+			guery_GAML_Partition_Info("018", dateAry);
+			System.out.println(dateAry[0]);
+			System.out.println(dateAry[1]);
+			System.out.println(dateAry[2]);
+			
+			System.out.println("test End");
+			
+//			String[] serverInfo = new String[3];
+//			serverInfo[0] = "ETL_S1";
+//			serverInfo[1] = "test2";
+//			serverInfo[2] = "127.0.0.1:8083";
+//			Date date = new Date();
+//			Date b_date = new Date();
+//			String[] ptr_upload_no = new String[1];
+//			executeETL(serverInfo, "tim18226", "600", ptr_upload_no, date, b_date);
+			
+//			ETL_Bean_LogData logData = new ETL_Bean_LogData();
+//			logData.setCENTRAL_NO("952");
+//			logData.setRECORD_DATE(new SimpleDateFormat("yyyyMMdd").parse("20180530"));
+//			supplementFX_Rate(logData);
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
 	}
 
 }

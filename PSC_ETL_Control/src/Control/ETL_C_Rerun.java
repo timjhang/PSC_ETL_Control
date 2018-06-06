@@ -23,20 +23,39 @@ import Tool.ETL_Tool_FormatCheck;
 
 public class ETL_C_Rerun {
 	
+	// 是否為正式參數
+	private static boolean isFormal = false;
+	
 	public static void execute() {
 		
 		Calendar c1 = Calendar.getInstance();
     	final String strTime = String.format("%1$tH%1$tM", c1);
     	
-    	//  使用編號" 3"設定檔(BatchRunTimeConfig)
-    	boolean isRun = ETL_C_BatchTime.isExecute(strTime, " 3");
+    	boolean isRun = false;
+    	String runBatchNo = "";
+    	if (isFormal) {
+	    	//  使用編號" 3"設定檔(BatchRunTimeConfig)
+    		runBatchNo = " 3";
+	    	isRun = ETL_C_BatchTime.isExecute(strTime, runBatchNo);
+    	} else {
+    		//  使用編號" 8"設定檔(BatchRunTimeConfig)
+    		runBatchNo = " 8";
+	    	isRun = ETL_C_BatchTime.isExecute(strTime, runBatchNo);
+    	}
     	
     	if (!isRun) {
-    		System.out.println("ETL_C_Rerun skip");
+    		System.out.println("ETL_C_Rerun skip  " + runBatchNo);
+    		return;
+    	}
+    	
+    	// 若Rerun執行則, 則ETL正常執行等待
+    	if (ETL_C_Master.isRerunExecuting()) {
+    		System.out.println("####ETL_C_Rerun - Rerun 作業進行中, 不進行新Rerun作業。");
+    		ETL_P_Log.write_Runtime_Log("ETL_C_Rerun", "####ETL_C_Rerun - Rerun 作業進行中, 不進行新Rerun作業。");
     		return;
     	}
 		
-    	System.out.println("####ETL_C_Rerun Start " + new Date());
+    	System.out.println("####ETL_C_Rerun Start  " + runBatchNo + "  " + new Date());
     	
     	// 檢視是否ETL執行中, 有則返回
     	// 正常情況 Rerun ETL若執行中  是不可以註冊rerun的, 所以這一段應沒有問題
@@ -59,6 +78,7 @@ public class ETL_C_Rerun {
     		System.out.println("BatchNo = " + batchNo); // for test
     		ETL_P_Log.write_Runtime_Log("ETL_C_Rerun", "BatchNo = " + batchNo);
 	    	
+    		boolean error_flag = false;
 	    	// 對不同天進行rerun
 	    	for (int date_index_i = 0; date_index_i < rerunDateList.size(); date_index_i++) {
 	    		
@@ -66,8 +86,16 @@ public class ETL_C_Rerun {
 	    		System.out.println("進行rerun日期：" + rerunRecordDate);
 	    		ETL_P_Log.write_Runtime_Log("ETL_C_Rerun", "進行rerun日期：" + rerunRecordDate);
 	    		
+	    		if (error_flag) {
+	    			updateRerunStatus(rerun_Central_No, rerunRecordDate, "E");
+	    			continue;
+	    		}
+	    		
 	    		// 確認是否有Rerun檔(function有提示訊息)
 	    		if (!checkHasRerunTxt(rerun_Central_No, rerunRecordDate)) {
+	    			
+	    			updateRerunStatus(rerun_Central_No, rerunRecordDate, "E");
+					error_flag = true;
 	    			continue;
 	    		}
 	    		
@@ -81,6 +109,9 @@ public class ETL_C_Rerun {
 	    		if (etlServerList.size() == 0) {
 	    			System.out.println("#### 無可用ETL Server 不進行作業");
 	    			ETL_P_Log.write_Runtime_Log("ETL_C_Rerun", "#### 無可用ETL Server 不進行作業");
+	    			
+	    			updateRerunStatus(rerun_Central_No, rerunRecordDate, "E");
+					error_flag = true;
 	    			continue;
 	    		}
 	    		
@@ -90,12 +121,28 @@ public class ETL_C_Rerun {
 	    		for (int i = 0; i < etlServerList.size(); i++) {
 	    			System.out.println("Server_No : " + etlServerList.get(i)[0] + " , Server : " + etlServerList.get(i)[1] + " , IP : " + etlServerList.get(i)[2]);
 	    		}
+	    		// 更新 Server 狀態使用中, 避免後續動作過長, 產生ETL Server遭其他排程使用
+	    		try {
+	    			ETL_C_PROCESS.update_Server_Status(etlServerList.get(0)[0], "U");
+	    		} catch (Exception ex) {
+	    			System.out.println("更新Server狀態\"使用中\"失敗 " + etlServerList.get(0)[0]);
+	    			ETL_P_Log.write_Runtime_Log("ETL_C_Rerun", "更新Server狀態\"使用中\"失敗 " + etlServerList.get(0)[0]);
+	    			ex.printStackTrace();
+	    			ETL_P_Log.write_Runtime_Log("ETL_C_Rerun", ex.getMessage());
+	    			
+	    			updateRerunStatus(rerun_Central_No, rerunRecordDate, "E");
+	    			error_flag = true;
+	    			continue;
+	    		}
 	    		
 	    		// 清除可能留下load rerun Table
 	    		if (!ETL_C_New5G.clearLoadTable(rerun_Central_No, "RERUN")) {
 	    			
 	    			System.out.println("清除相關Rerun Table 發生錯誤!");
 	    			ETL_P_Log.write_Runtime_Log("ETL_C_Rerun", "清除相關Rerun Table 發生錯誤!");
+	    			
+	    			updateRerunStatus(rerun_Central_No, rerunRecordDate, "E");
+					error_flag = true;
 	    			continue;
 	    		}
 	    		
@@ -106,8 +153,14 @@ public class ETL_C_Rerun {
 	    			ex.printStackTrace();
 	    			ETL_P_Log.write_Runtime_Log("ETL_C_Rerun", 
 	    					new SimpleDateFormat("yyyy-MM-dd").format(rerunRecordDate) + "取得前一資料日期失敗\n" + ex.getMessage());
+	    			
+	    			updateRerunStatus(rerun_Central_No, rerunRecordDate, "E");
+					error_flag = true;
 	    			continue;
 	    		}
+	    		
+	    		// Transaction超過一定門檻時執行reorg(產生新一代後即可能進行ETL作業, 故先進行可能的reorg)
+	    		ETL_C_New5G.reorgTransaction(rerun_Central_No, beforeRecordDate);
 	    		
 	    		// 建立新一代load rerun Table
 	    		if (!ETL_C_FIVE_G.generateNewGTable(beforeRecordDate, rerunRecordDate, rerun_Central_No, "RERUN")) {
@@ -131,15 +184,19 @@ public class ETL_C_Rerun {
 					System.out.println(rerun_Central_No + " Rerun 檔資料日期正確！");
 					ETL_P_Log.write_Runtime_Log("checkRerunCentral", rerun_Central_No + " Rerun 檔資料日期正確！");
 					
-					// 確認是否為執行過資料(Master Log), 未執行過資料才列入待執行清單
-					if (ETL_C_Master.hasMasterLog(rerunRecordDate, rerun_Central_No, dataInfo[1])) {
-						System.out.println(rerun_Central_No + " " + dataInfo[1] + "已經執行過！"); // for test
-						ETL_P_Log.write_Runtime_Log("checkReadyCentral", rerun_Central_No + " " + dataInfo[1] + "已經執行過！");
-						
-						// 將已經執行過的Rerun txt刪除
-						removeRerunTxt(rerun_Central_No, rerunRecordDate);
-						continue;
-					}
+					// 不需要檢查, Batch_No每次rerun皆不同
+//					// 確認是否為執行過資料(Master Log), 未執行過資料才列入待執行清單
+//					if (ETL_C_Master.hasMasterLog(rerunRecordDate, rerun_Central_No, dataInfo[1])) {
+//						System.out.println(rerun_Central_No + " " + dataInfo[1] + "已經執行過！"); // for test
+//						ETL_P_Log.write_Runtime_Log("checkReadyCentral", rerun_Central_No + " " + dataInfo[1] + "已經執行過！");
+//						
+//						// 將已經執行過的Rerun txt刪除
+//						removeRerunTxt(rerun_Central_No, rerunRecordDate);
+//						
+//						updateRerunStatus(rerun_Central_No, rerunRecordDate, "E");
+//						error_flag = true;
+//						continue;
+//					}
 					
 				} else {
 					System.out.println(rerun_Central_No + " Rerun 檔資料日期非預期:" + dataInfo[0]); // for test
@@ -147,39 +204,61 @@ public class ETL_C_Rerun {
 					
 					// 將錯誤的Rerun txt刪除
 					removeRerunTxt(rerun_Central_No, rerunRecordDate);
+					
+					updateRerunStatus(rerun_Central_No, rerunRecordDate, "E");
+					error_flag = true;
 					continue;
 				}
 				
 				String[] ptr_upload_no = new String[1];
 				
 	    		// 指定ETL任務
-	    		ETL_C_PROCESS.executeRerun(etlServerList.get(0), batchNo, rerun_Central_No, ptr_upload_no, rerunRecordDate, beforeRecordDate);
+				boolean etlSuccess = ETL_C_PROCESS.executeRerun(etlServerList.get(0), batchNo, rerun_Central_No, ptr_upload_no, rerunRecordDate, beforeRecordDate);
 	    		
-	    		boolean add5GSuccess = false;
-	    		
-	    		// 執行暫存Table(load_rerun)併入五代
-	    		add5GSuccess = ETL_C_Master.addNew5G(batchNo, rerunRecordDate, rerun_Central_No, ptr_upload_no[0], "RERUN");
-	    		
-	    		// 執行runstate程式
-	    		ETL_C_Master.runStateSRC(rerun_Central_No);
+				
+				// 流程需要  不再繼續在此處執行 (穩定後可清除)
+//	    		boolean add5GSuccess = false;
+//	    		
+//	    		// 執行暫存Table(load_rerun)併入五代
+//	    		add5GSuccess = ETL_C_Master.addNew5G(batchNo, rerunRecordDate, rerun_Central_No, ptr_upload_no[0], "RERUN");
+//	    		
+//	    		// 執行runstate程式
+//	    		ETL_C_Master.runStateSRC(rerun_Central_No);
+				
 	    		
 	    		// 執行正常完整, 則寫入
-	    		if (add5GSuccess) {
+	    		if (etlSuccess) {
 	    			
-	    			// 寫入ETL完成紀錄ETL_LOAD_GAML
-	    			boolean isSuccess;
-	    			isSuccess = write_rerun_ETL_LOAD_GAML(batchNo, rerunRecordDate, rerun_Central_No, ptr_upload_no[0]);
-	    			
-	    			System.out.println("batchNo = " + batchNo + " , record_date = " + rerunRecordDate 
-	    					+ " , central_no = " + rerun_Central_No + " , upload_no = " + ptr_upload_no[0]);
-	    			if (isSuccess) {
-	    				System.out.println("寫入ETL_LOAD_GAML成功!");
-	    				ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML成功!");
-	    			} else {
-	    				System.out.println("寫入ETL_LOAD_GAML失敗!");
-	    				ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML失敗!");
-	    			}
-	    			
+	    			// 執行runstate程式
+		    		ETL_C_Master.runStateSRC(rerun_Central_No);
+		    		
+		    		if (isFormal) {
+		    			// 寫入ETL完成紀錄ETL_LOAD_GAML
+		    			boolean isSuccess = write_rerun_ETL_LOAD_GAML(batchNo, rerunRecordDate, rerun_Central_No, ptr_upload_no[0]);
+		    			
+		    			System.out.println("batchNo = " + batchNo + " , record_date = " + rerunRecordDate 
+		    					+ " , central_no = " + rerun_Central_No + " , upload_no = " + ptr_upload_no[0]);
+		    			if (isSuccess) {
+		    				System.out.println("寫入ETL_LOAD_GAML成功!");
+		    				ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML成功!");
+		    			} else {
+		    				System.out.println("寫入ETL_LOAD_GAML失敗!");
+		    				ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML失敗!");
+		    			}
+		    		} else {
+		    			// 寫入ETL完成紀錄ETL_LOAD_GAML
+		    			boolean isSuccess = write_rerun_ETL_LOAD_GAML(batchNo, rerunRecordDate, rerun_Central_No, ptr_upload_no[0]);
+		    			
+		    			System.out.println("batchNo = " + batchNo + " , record_date = " + rerunRecordDate 
+		    					+ " , central_no = " + rerun_Central_No + " , upload_no = " + ptr_upload_no[0]);
+		    			if (isSuccess) {
+		    				System.out.println("寫入ETL_LOAD_GAML成功!");
+		    				ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML成功!");
+		    			} else {
+		    				System.out.println("寫入ETL_LOAD_GAML失敗!");
+		    				ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML失敗!");
+		    			}
+		    		}
 	    		}
 	    		
 	    		// 跑完的時候關閉對應的Flag
@@ -491,7 +570,7 @@ public class ETL_C_Rerun {
 			CallableStatement cstmt = con.prepareCall(sql);
 			
 			cstmt.registerOutParameter(1, Types.INTEGER);
-			cstmt.setString(2, central_no);
+			cstmt.setString(2, batch_no);
 			cstmt.setDate(3, new java.sql.Date(record_date.getTime()));
 			cstmt.setString(4, central_no);
 			cstmt.setString(5, upload_no);

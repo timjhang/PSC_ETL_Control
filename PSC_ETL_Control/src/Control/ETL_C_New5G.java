@@ -16,6 +16,9 @@ import DB.ETL_P_Log;
 import Profile.ETL_Profile;
 
 public class ETL_C_New5G {
+	
+	// 是否為正式參數
+	private static boolean isFormal = false;
 
 	public static void execute() {
 		
@@ -23,36 +26,47 @@ public class ETL_C_New5G {
     	final String strTime = String.format("%1$tH%1$tM", c1);
     	
     	//  使用編號" 2"設定檔(BatchRunTimeConfig)
-    	boolean isRun = ETL_C_BatchTime.isExecute(strTime, " 2");
+    	boolean isRun;
+    	String runBatchNo = "";
+    	if (isFormal) {
+    		runBatchNo = " 2";
+    		isRun = ETL_C_BatchTime.isExecute(strTime, runBatchNo);
+    	} else {
+    		runBatchNo = " 5";
+    		isRun = ETL_C_BatchTime.isExecute(strTime, runBatchNo);
+    	}
+    	
     	if (!isRun) {
-    		System.out.println("ETL_C_New5G skip");
+    		System.out.println("ETL_C_New5G skip  " + runBatchNo);
     		return;
     	}
     	
-    	// 若Rerun執行中則, 則ETL正常執行等待
-    	if (ETL_C_Master.isRerunExecuting()) {
-    		System.out.println("Rerun 作業進行中, 不進行ETL作業。");
-    		ETL_P_Log.write_Runtime_Log("ETL_C_Master", "Rerun 作業進行中, 不進行ETL作業。");
+    	// 若Rerun執行則, 則ETL正常執行等待
+    	if (ETL_C_Master.isRerunExecute()) {
+    		System.out.println("####ETL_C_New5G - Rerun 作業進行中, 不進行備檔作業。");
+    		ETL_P_Log.write_Runtime_Log("ETL_C_New5G", "####ETL_C_New5G - Rerun 作業進行中, 不進行備檔作業。");
     		return;
     	}
     	
-    	System.out.println("####ETL_C_New5G Start " + new Date());
+    	System.out.println("####ETL_C_New5G Start " + runBatchNo + "  " + new Date());
     	
-    	// 產生資料日期(昨天)
-//		Calendar cal = Calendar.getInstance(); // 今天時間
-//        cal.add(Calendar.DATE, -1); // 昨天時間
-//        Date record_date = cal.getTime();
-        
-    	
-    	
-    	// for test
-    	Date record_date = new Date();
-		try {
-			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Before_Record_Date_Str);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			record_date = new Date();
-		}
+    	 Date record_date;
+    	if (isFormal) {
+    		// 正式版本
+	    	// 產生資料日期(昨天)
+			Calendar cal = Calendar.getInstance(); // 今天時間
+	        cal.add(Calendar.DATE, -1); // 昨天時間
+	        record_date = cal.getTime();
+    	} else {
+    		// 測試版本
+    		try {
+    			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Before_Record_Date_Str);
+//    			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Record_Date_Str);
+    		} catch (Exception ex) {
+    			ex.printStackTrace();
+    			record_date = new Date();
+    		}
+    	}
     	
     	// 巡視所有單位資料庫, 是否有需建立新一代Table 資料庫
 		List<String> central_list;
@@ -74,7 +88,7 @@ public class ETL_C_New5G {
 		} else {
 			System.out.println("####ETL_C_New5G central_no list:");
 			for (int i = 0; i < central_list.size(); i++) {
-				System.out.println(central_list.get(0));
+				System.out.println(central_list.get(i));
 			}
 		}
     	
@@ -84,6 +98,9 @@ public class ETL_C_New5G {
 			System.out.println("清除相關Load Table 發生錯誤!");
 			return;
 		}
+		
+		// Transaction超過一定門檻時執行reorg(產生新一代後即可能進行ETL作業, 故先進行可能的reorg)
+		reorgTransaction(central_list.get(0), beforeRecordDate);
 		
 		// 建立新一代load temp Table
 		if (!ETL_C_FIVE_G.generateNewGTable(beforeRecordDate, nextRecordDate, central_list.get(0), "TEMP")) {
@@ -182,10 +199,59 @@ public class ETL_C_New5G {
 		}
 	}
 	
+	// Transaction超過一定門檻時執行reorg
+	public static void reorgTransaction(String central_no, Date oldRecordDate) {
+		
+		try {
+			
+			System.out.println("####ETL_C_New5G - reorgTransaction 單位:" + central_no + " Start  " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Load.reorgTransaction(?,?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection(central_no);
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setDate(2, new java.sql.Date(oldRecordDate.getTime()));
+			cstmt.registerOutParameter(3, Types.INTEGER);
+			cstmt.registerOutParameter(4, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(4);
+	            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+//	            throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+			}
+			
+			int isExecute = cstmt.getInt(3);
+			
+			System.out.println("isExecute = " + isExecute);
+			if (isExecute > 0) {
+				System.out.println("單位: " + central_no + "  Transaction  已執行Reorg!!");
+			} else {
+				System.out.println("單位: " + central_no + "  Transaction  Reorg未執行。");
+			}
+			
+			System.out.println("####ETL_C_New5G - reorgTransaction 單位:" + central_no + " End  " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
 	
 	public static void main(String[] argvs) {
 		
 		try {
+			
+			System.out.println("測試開始");
+			
+			reorgTransaction("951", new SimpleDateFormat("yyyyMMdd").parse("20180423"));
+			
+			System.out.println("測試結束");
 			
 //			Date[] dAry = new Date[2];
 //			
@@ -205,7 +271,7 @@ public class ETL_C_New5G {
 			
 			///////
 			
-//			System.out.println("測試開始");
+
 //			
 //			// 建立新一代load temp Table
 //			if (!ETL_C_FIVE_G.generateNewGTable(new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Before_Record_Date_Str), 
@@ -215,8 +281,7 @@ public class ETL_C_New5G {
 //			} else {
 //				System.out.println("done");
 //			}
-//			
-//			System.out.println("測試結束");
+
 			
 		} catch (Exception ex) {
 			ex.getStackTrace();

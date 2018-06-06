@@ -13,10 +13,10 @@ import Tool.ETL_Tool_CastObjUtil;
 public class ETL_L_LOAN_MASTER {
 
 	
-	// 觸發DB2載入Procedure, 資料載入LOAN_DETAIL_LOAD_TEMP  // TODO
+	// 觸發DB2載入Procedure, 資料載入LOAN_MASTER_LOAD_TEMP  // TODO
 	public void trans_to_LOAN_MASTER_LOAD(ETL_Bean_LogData logData, String fedServer, String runTable) {
 		
-		System.out.println("#######Load - ETL_L_LOAN_DETAIL - Start"); // TODO
+		System.out.println("#######Load - ETL_L_LOAN_MASTER - Start"); // TODO
 		
 		try {
 			
@@ -47,7 +47,7 @@ public class ETL_L_LOAN_MASTER {
 			ex.printStackTrace();
 		}
 		
-		System.out.println("#######Load - ETL_L_LOAN_DETAIL - End"); // TODO
+		System.out.println("#######Load - ETL_L_LOAN_MASTER - End"); // TODO
 		
 	}
 
