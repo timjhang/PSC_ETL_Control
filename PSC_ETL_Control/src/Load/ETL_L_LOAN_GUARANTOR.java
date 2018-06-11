@@ -10,8 +10,24 @@ import DB.ConnectionHelper;
 import Profile.ETL_Profile;
 import Tool.ETL_Tool_CastObjUtil;
 
-public class ETL_L_LOAN_GUARANTOR {
+public class ETL_L_LOAN_GUARANTOR extends Load {
 
+	public ETL_L_LOAN_GUARANTOR() {
+		
+	}
+
+	public ETL_L_LOAN_GUARANTOR(ETL_Bean_LogData logData, String fedServer, String runTable) {
+		super(logData, fedServer, runTable);
+	}
+
+	@Override
+	public void load_File() {
+		try {
+			trans_to_LOAN_GUARANTOR_LOAD(this.logData, this.fedServer, this.runTable);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
+	}
 	
 	// 觸發DB2載入Procedure, 資料載入LOAN_GUARANTOR_LOAD_TEMP  // TODO
 	public void trans_to_LOAN_GUARANTOR_LOAD(ETL_Bean_LogData logData, String fedServer, String runTable) {
@@ -50,6 +66,5 @@ public class ETL_L_LOAN_GUARANTOR {
 		System.out.println("#######Load - ETL_L_LOAN_GUARANTOR - End"); // TODO
 		
 	}
-
 
 }

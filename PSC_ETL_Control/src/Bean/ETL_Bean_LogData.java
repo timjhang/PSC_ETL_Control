@@ -49,6 +49,22 @@ public class ETL_Bean_LogData {
 	private Date BEFORE_ETL_PROCESS_DATE;
 	
 	
+	// clone class方法
+	public ETL_Bean_LogData clone() {
+		ETL_Bean_LogData newOne = new ETL_Bean_LogData();
+		
+		newOne.setBATCH_NO(this.BATCH_NO);
+		newOne.setCENTRAL_NO(this.CENTRAL_NO);
+		newOne.setRECORD_DATE(this.RECORD_DATE);
+		newOne.setFILE_TYPE(this.FILE_TYPE);
+		newOne.setUPLOAD_NO(this.UPLOAD_NO);
+		newOne.setPROGRAM_NO(this.PROGRAM_NO);
+		newOne.setBEFORE_ETL_PROCESS_DATE(this.BEFORE_ETL_PROCESS_DATE);
+		
+		return newOne;
+	}
+	
+	
 	public String getBATCH_NO() {
 		return BATCH_NO;
 	}
@@ -104,7 +120,5 @@ public class ETL_Bean_LogData {
 	public void setBEFORE_ETL_PROCESS_DATE(Date bEFORE_ETL_PROCESS_DATE) {
 		BEFORE_ETL_PROCESS_DATE = bEFORE_ETL_PROCESS_DATE;
 	}
-
-	
 
 }

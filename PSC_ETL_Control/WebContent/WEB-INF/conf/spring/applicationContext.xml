@@ -38,9 +38,6 @@
   	<bean id="jobDetailForMasterSchedule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="targetObject">
 			<bean id="Master" class="Control.ETL_C_Master">
-				<!-- <property name="connectString" value="123"/>
-				<property name="userName" value="345"/>
-        		<property name="password" value="567"/> -->
 			</bean>
 		</property>
 		<property name="targetMethod">
@@ -97,13 +94,34 @@
 		</property>
 	</bean>
 	
+	<!-- Migration 控制程式 -->
+  	<bean id="jobDetailForMigrationSchedule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<bean id="Migration" class="Control.ETL_C_Migration">
+			</bean>
+		</property>
+		<property name="targetMethod">
+			<value>execute</value>
+		</property>
+	</bean>
+	 
+	<bean id="MigrationTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetailForMigrationSchedule" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+	
 	<!-- 批次作業 -->
 	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
 			<list>
-				<!-- <ref local="MasterTrigger" /> -->
-				<ref local="New5GTrigger" /><!--  -->
-				<!-- <ref local="RerunTrigger" /> -->
+				<ref local="MasterTrigger" /><!-- Master ETL 主排程控制程式 -->
+				<ref local="New5GTrigger" /><!-- Master ETL 建立5代Table控制程式 -->
+				<!-- <ref local="RerunTrigger" />Rerun 控制程式 -->
+				<!-- <ref local="MigrationTrigger" />Migration 控制程式 -->
 			</list>
 		</property>
 	</bean>

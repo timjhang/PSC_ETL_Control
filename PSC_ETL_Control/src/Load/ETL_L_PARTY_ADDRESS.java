@@ -10,16 +10,33 @@ import DB.ConnectionHelper;
 import Profile.ETL_Profile;
 import Tool.ETL_Tool_CastObjUtil;
 
-public class ETL_L_PARTY_ADDRESS {
+public class ETL_L_PARTY_ADDRESS extends Load {
 	
-	// 觸發DB2載入Procedure, 資料載入PARTY_ADDRESS_LOAD_TEMP  // TODO
+	public ETL_L_PARTY_ADDRESS() {
+		
+	}
+
+	public ETL_L_PARTY_ADDRESS(ETL_Bean_LogData logData, String fedServer, String runTable) {
+		super(logData, fedServer, runTable);
+	}
+
+	@Override
+	public void load_File() {
+		try {
+			trans_to_PARTY_ADDRESS_LOAD(this.logData, this.fedServer, this.runTable);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
+	}
+	
+	// 觸發DB2載入Procedure, 資料載入PARTY_ADDRESS_LOAD_TEMP  
 	public void trans_to_PARTY_ADDRESS_LOAD(ETL_Bean_LogData logData, String fedServer, String runTable) {
 		
-		System.out.println("#######Load - ETL_L_PARTY_ADDRESS - Start"); // TODO
+		System.out.println("#######Load - ETL_L_PARTY_ADDRESS - Start"); 
 		
 		try {
 			
-			// TODO
+			
 			String sql = "{call " + ETL_Profile.db2TableSchema + ".Load.loadETL_PARTY_ADDRESS_LOAD(?,?,?,?,?)}";
 			
 			Connection con = ConnectionHelper.getDB2Connection(logData.getCENTRAL_NO().trim());
@@ -50,7 +67,7 @@ public class ETL_L_PARTY_ADDRESS {
 			ex.printStackTrace();
 		}
 		
-		System.out.println("#######Load - ETL_L_PARTY_ADDRESS - End"); // TODO
+		System.out.println("#######Load - ETL_L_PARTY_ADDRESS - End"); 
 		
 	}
 

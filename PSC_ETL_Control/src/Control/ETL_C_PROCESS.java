@@ -7,6 +7,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.ibm.db2.jcc.DB2Types;
 
@@ -23,7 +25,7 @@ public class ETL_C_PROCESS {
 	// 執行ETL
 	public static boolean executeETL(String[] etlServerInfo, String batch_No, String central_no, String[] ptr_upload_no, Date record_Date, Date before_record_date) {
 		
-		System.out.println("#### ETL_C_PROCESS  Start");
+		System.out.println("#### ETL_C_PROCESS - executeETL  Start");
 		
 		// for test
 		System.out.println("Server_No : " + etlServerInfo[0] + " , Server : " + etlServerInfo[1] + " , IP : " + etlServerInfo[2]);
@@ -162,7 +164,7 @@ public class ETL_C_PROCESS {
 			exeResult = false;
 		}
 		
-		System.out.println("#### ETL_C_PROCESS  End");
+		System.out.println("#### ETL_C_PROCESS - executeETL  End");
 		
 		return exeResult;
 		
@@ -312,6 +314,136 @@ public class ETL_C_PROCESS {
 		
 	}
 	
+	// 執行Migration
+	public static boolean executeMigration(String[] etlServerInfo, String batch_No, String central_no, String[] ptr_upload_no, Date record_Date, Date before_record_date) {
+		
+		System.out.println("#### ETL_C_PROCESS - executeMigration  Start");
+		
+		String exeInfo = "Server_No : " + etlServerInfo[0] + " , Server : " + etlServerInfo[1] + " , IP : " + etlServerInfo[2] + "\n";
+		exeInfo = exeInfo + "Batch_No = " + batch_No + "\n";
+		exeInfo = exeInfo + "Central_no = " + central_no + "\n";
+		exeInfo = exeInfo + "Record_Date = " + record_Date + "\n";
+		exeInfo = exeInfo + "Before_record_date = " + before_record_date + "\n";
+		
+		// for test
+		System.out.println(exeInfo);
+		
+		String server_no = etlServerInfo[0];
+		
+		// ETL Server下載特定中心資料
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+		String[] fileInfo = new String[3];
+		String exc_record_dateStr = sdf.format(record_Date);
+		String upload_no = "";
+		String before_record_dateStr = sdf.format(before_record_date);
+		boolean exeResult = true;
+		
+		// **更新 Server 狀態使用中
+		try {
+			update_Server_Status(etlServerInfo[0], "U");
+		} catch (Exception ex) {
+			System.out.println("更新Server狀態\"使用中\"失敗 " + server_no);
+			ETL_P_Log.write_Runtime_Log("executeMigration", "更新Server狀態\"使用中\"失敗 " + server_no);
+			ex.printStackTrace();
+			ETL_P_Log.write_Runtime_Log("executeMigration", ex.getMessage());
+			return false;
+		}
+		
+		try {
+			// 更新 新5代製作紀錄檔
+			updateNewGenerationMigStatus(record_Date, central_no, "Start", "");
+			
+			// 呼叫ETL Server進行initial作業
+			if (!ETL_C_CallWS.call_ETL_Server_initETLserver(etlServerInfo[2])) {
+//					System.out.println("#### ETL_C_PROCESS - executeMigration - call_ETL_Server_initETLserver 發生錯誤！ " + server_no);
+//					return false;
+				throw new Exception("#### ETL_C_PROCESS - executeMigration - call_ETL_Server_initETLserver 發生錯誤！ " + server_no);
+			}
+			
+			// 下載中心檔案
+			ETL_Bean_Response response = ETL_C_CallWS.call_ETL_Server_getUploadMigFileInfo(etlServerInfo[2], central_no, "", null);
+
+			if (response.isSuccess()) {
+				//取出物件轉型, <資料日期|上傳批號 |zip檔名>
+				fileInfo = (String[]) response.getObj();
+			}
+			
+			// 執行下載
+			if (!response.isSuccess()) {
+				throw new Exception("#### ETL_C_PROCESS - executeMigration - call_ETL_Server_getUploadFileInfo 發生錯誤！ " + server_no);
+			}
+
+			upload_no = fileInfo[1];
+			ptr_upload_no[0] = upload_no;
+			
+			System.out.println("#### ETL_C_PROCESS fileInfo[0]" + fileInfo[0] + " " + server_no);
+			System.out.println("#### ETL_C_PROCESS fileInfo[1]" + fileInfo[1] + " " + server_no);
+
+			
+			// 寫入E Master Log
+			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "E", etlServerInfo[0])) {
+				throw new Exception("E Master Log已存在\n" + exeInfo);
+			};
+			// 進行E系列程式
+			if (!ETL_C_CallWS.call_ETL_Server_Efunction(etlServerInfo[2], "", batch_No, central_no, exc_record_dateStr, upload_no)) {
+				throw new Exception("#### ETL_C_PROCESS - executeMigration - call_ETL_Server_Efunction 發生錯誤！ " + server_no);
+			}
+			// 更新 E Master Log
+			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "E", "E", "Y", "");
+			
+			
+			// 寫入T Master Log
+			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "T", etlServerInfo[0])) {
+				throw new Exception("T Master Log已存在\n" + exeInfo);
+			}
+			// 進行T系列程式
+			if (!ETL_C_CallWS.call_ETL_Server_Tfunction(etlServerInfo[2], "", batch_No, central_no, exc_record_dateStr, upload_no, before_record_dateStr)) {
+				throw new Exception("#### ETL_C_PROCESS - executeMigration - call_ETL_Server_Tfunction 發生錯誤！ " + server_no);
+			}
+			// 更新 T Master Log
+			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "T", "E", "Y", "");
+			
+			
+			// 寫入L Master Log
+			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "L", etlServerInfo[0])) {
+				throw new Exception("L Master Log已存在\n" + exeInfo);
+			}
+			// 進行L系列程式
+			if (!exeLfunction(etlServerInfo[0], batch_No, central_no, exc_record_dateStr, upload_no, before_record_dateStr, "TEMP")) {
+				throw new Exception("#### ETL_C_PROCESS - executeMigration - exeLfunction 發生錯誤！ " + server_no);
+			}
+			// 更新 L Master Log
+			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "L", "E", "Y", "");
+			
+			// test  temp
+//			// 執行runstate程式
+//			ETL_C_Master.runStateSRC(central_no);
+			
+			// 更新 新5代製作紀錄檔 - Migration結束
+			updateNewGenerationMigStatus(record_Date, central_no, "End", "");
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			ETL_P_Log.write_Runtime_Log("executeMigration", ex.getMessage());
+			updateNewGenerationMigStatus(record_Date, central_no, "Error", ex.getMessage());
+			exeResult = false;
+		}
+		
+		// **更新 Server 狀態可使用
+		try {
+			update_Server_Status(etlServerInfo[0], "Y");
+		} catch (Exception ex) {
+			System.out.println("更新Server狀態\"可使用\"失敗 " + server_no);
+			ETL_P_Log.write_Runtime_Log("executeMigration", "更新Server狀態\"可使用\"失敗 " + server_no);
+			ex.printStackTrace();
+			exeResult = false;
+		}
+		
+		System.out.println("#### ETL_C_PROCESS - executeMigration  End");
+		
+		return exeResult;
+		
+	}
 	
 	// 寫入Master Log
 	private static boolean writeMasterLog(String batch_No, String central_No, Date record_Date,
@@ -541,87 +673,204 @@ public class ETL_C_PROCESS {
 			System.out.println("runTable:" + runTable);
 
 			// 執行20支L系列程式
+//			if ("018".equals(exc_central_no.trim())) {
+//				ETL_Bean_LogData logData2 = logData.clone();
+//				
+//				List<String> central_list = getUsableCentralList(exc_record_date);
+//				
+//				for (int i = 0; i < central_list.size(); i++) {
+//					logData2.setCENTRAL_NO(central_list.get(i));
+//					
+//					// 更新7個單位日曆檔 & 匯率檔
+//					logData2.setPROGRAM_NO("ETL_L_CALENDAR");
+//					new ETL_L_CALENDAR().trans_to_CALENDAR_LOAD(logData2, fedServer, runTable);
+//					
+//					logData2.setPROGRAM_NO("ETL_L_FX_RATE");
+//					new ETL_L_FX_RATE().trans_to_FX_RATE_LOAD(logData2, fedServer, runTable);
+//				}
+//				
+//				// 更新GAMLDB上的日曆檔(Calendar)
+//				copyCalendar_ToGAMLDB();
+//			}
+//			
+//			logData.setPROGRAM_NO("ETL_L_PARTY_PHONE");
+//			new ETL_L_PARTY_PHONE().trans_to_PARTY_PHONE_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_COLLATERAL");
+//			new ETL_L_COLLATERAL().trans_to_COLLATERAL_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_LOAN_DETAIL");
+//			new ETL_L_LOAN_DETAIL().trans_to_LOAN_DETAIL_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_LOAN_GUARANTOR");
+//			new ETL_L_LOAN_GUARANTOR().trans_to_LOAN_GUARANTOR_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_LOAN_MASTER");
+//			new ETL_L_LOAN_MASTER().trans_to_LOAN_MASTER_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_LOAN");
+//			new ETL_L_LOAN().trans_to_LOAN_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_ACCOUNT_PROPERTY");
+//			new ETL_L_ACCOUNT_PROPERTY().trans_to_ACCOUNT_PROPERTY_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_ACCOUNT");
+//			new ETL_L_ACCOUNT().trans_to_ACCOUNT_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_BALANCE");
+//			new ETL_L_BALANCE().trans_to_BALANCE_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_PARTY_ACCOUNT_REL");
+//			new ETL_L_PARTY_ACCOUNT_REL().trans_to_PARTY_ACCOUNT_REL_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_PARTY_ADDRESS");
+//			new ETL_L_PARTY_ADDRESS().trans_to_PARTY_ADDRESS_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_PARTY_EMAIL");
+//			new ETL_L_PARTY_EMAIL().trans_to_PARTY_EMAIL_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_PARTY_NATINOALITY");
+//			new ETL_L_PARTY_NATINOALITY().trans_to_PARTY_NATINOALITY_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_PARTY_PARTY_REL");
+//			new ETL_L_PARTY_PARTY_REL().trans_to_PARTY_PARTY_REL_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_PARTY");
+//			new ETL_L_PARTY().trans_to_PARTY_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_SERVICE");
+//			new ETL_L_SERVICE().trans_to_SERVICE_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_TRANSFER");
+//			new ETL_L_TRANSFER().trans_to_TRANSFER_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_TRANSACTION");
+//			new ETL_L_TRANSACTION().trans_to_TRANSACTION_LOAD(logData, fedServer, runTable);
+//			
+//			logData.setPROGRAM_NO("ETL_L_ERROR_LOG");
+//			new ETL_L_ERROR_LOG().trans_to_Error_Log(logData, fedServer, runTable);
+			
+			
+			/** 平行化區塊  Start **/
+			// 執行20支L系列程式
+			List<Load> loads = new ArrayList<Load>();
+			
+			// clone 新class指標用
+			ETL_Bean_LogData logData2;
+			
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_TRANSACTION");
+			loads.add(new ETL_L_TRANSACTION(logData2, fedServer, runTable));
+			
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_PARTY_PHONE");
+			loads.add(new ETL_L_PARTY_PHONE(logData2, fedServer, runTable));
+			
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_COLLATERAL");
+			loads.add(new ETL_L_COLLATERAL(logData2, fedServer, runTable));
+			
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_LOAN_DETAIL");
+			loads.add(new ETL_L_LOAN_DETAIL(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_LOAN_GUARANTOR");
+			loads.add(new ETL_L_LOAN_GUARANTOR(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_LOAN_MASTER");
+			loads.add(new ETL_L_LOAN_MASTER(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_LOAN");
+			loads.add(new ETL_L_LOAN(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_ACCOUNT_PROPERTY");
+			loads.add(new ETL_L_ACCOUNT_PROPERTY(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_ACCOUNT");
+			loads.add(new ETL_L_ACCOUNT(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_BALANCE");
+			loads.add(new ETL_L_BALANCE(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_PARTY_ACCOUNT_REL");
+			loads.add(new ETL_L_PARTY_ACCOUNT_REL(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_PARTY_ADDRESS");
+			loads.add(new ETL_L_PARTY_ADDRESS(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_PARTY_EMAIL");
+			loads.add(new ETL_L_PARTY_EMAIL(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_PARTY_NATINOALITY");
+			loads.add(new ETL_L_PARTY_NATINOALITY(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_PARTY_PARTY_REL");
+			loads.add(new ETL_L_PARTY_PARTY_REL(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_PARTY");
+			loads.add(new ETL_L_PARTY(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_SERVICE");
+			loads.add(new ETL_L_SERVICE(logData2, fedServer, runTable));
+
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_TRANSFER");
+			loads.add(new ETL_L_TRANSFER(logData2, fedServer, runTable));
+			
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_ERROR_LOG");
+			loads.add(new ETL_L_ERROR_LOG(logData2, fedServer, runTable));
+			
 			if ("018".equals(exc_central_no.trim())) {
-				ETL_Bean_LogData logData2 = new ETL_Bean_LogData();
-				logData2.setBATCH_NO(logData.getBATCH_NO());
-				logData2.setFILE_TYPE(logData.getFILE_TYPE());
-				logData2.setRECORD_DATE(logData.getRECORD_DATE());
-				logData2.setUPLOAD_NO(logData.getUPLOAD_NO());
-				logData2.setBEFORE_ETL_PROCESS_DATE(logData.getBEFORE_ETL_PROCESS_DATE());
 				
 				List<String> central_list = getUsableCentralList(exc_record_date);
 				
 				for (int i = 0; i < central_list.size(); i++) {
-					logData2.setCENTRAL_NO(central_list.get(i));
 					
 					// 更新7個單位日曆檔 & 匯率檔
+					logData2 = logData.clone();
+					logData2.setCENTRAL_NO(central_list.get(i));
 					logData2.setPROGRAM_NO("ETL_L_CALENDAR");
-					new ETL_L_CALENDAR().trans_to_CALENDAR_LOAD(logData2, fedServer, runTable);
+					loads.add(new ETL_L_CALENDAR(logData2, fedServer, runTable));
 					
+					logData2 = logData.clone();
+					logData2.setCENTRAL_NO(central_list.get(i));
 					logData2.setPROGRAM_NO("ETL_L_FX_RATE");
-					new ETL_L_FX_RATE().trans_to_FX_RATE_LOAD(logData2, fedServer, runTable);
+					loads.add(new ETL_L_FX_RATE(logData2, fedServer, runTable));
 				}
-				
+			}
+			
+			ExecutorService executor = Executors.newFixedThreadPool(5);
+			
+			for (Load load : loads) {
+				executor.execute(load);
+			}
+			
+			executor.shutdown();
+
+			while (!executor.isTerminated()) {
+			}
+			
+			System.out.println("線程池已經關閉");
+			
+			if ("018".equals(exc_central_no.trim())) {
 				// 更新GAMLDB上的日曆檔(Calendar)
 				copyCalendar_ToGAMLDB();
 			}
-			
-			logData.setPROGRAM_NO("ETL_L_PARTY_PHONE");
-			new ETL_L_PARTY_PHONE().trans_to_PARTY_PHONE_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_COLLATERAL");
-			new ETL_L_COLLATERAL().trans_to_COLLATERAL_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_LOAN_DETAIL");
-			new ETL_L_LOAN_DETAIL().trans_to_LOAN_DETAIL_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_LOAN_GUARANTOR");
-			new ETL_L_LOAN_GUARANTOR().trans_to_LOAN_GUARANTOR_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_LOAN_MASTER");
-			new ETL_L_LOAN_MASTER().trans_to_LOAN_MASTER_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_LOAN");
-			new ETL_L_LOAN().trans_to_LOAN_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_ACCOUNT_PROPERTY");
-			new ETL_L_ACCOUNT_PROPERTY().trans_to_ACCOUNT_PROPERTY_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_ACCOUNT");
-			new ETL_L_ACCOUNT().trans_to_ACCOUNT_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_BALANCE");
-			new ETL_L_BALANCE().trans_to_BALANCE_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_PARTY_ACCOUNT_REL");
-			new ETL_L_PARTY_ACCOUNT_REL().trans_to_PARTY_ACCOUNT_REL_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_PARTY_ADDRESS");
-			new ETL_L_PARTY_ADDRESS().trans_to_PARTY_ADDRESS_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_PARTY_EMAIL");
-			new ETL_L_PARTY_EMAIL().trans_to_PARTY_EMAIL_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_PARTY_NATINOALITY");
-			new ETL_L_PARTY_NATINOALITY().trans_to_PARTY_NATINOALITY_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_PARTY_PARTY_REL");
-			new ETL_L_PARTY_PARTY_REL().trans_to_PARTY_PARTY_REL_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_PARTY");
-			new ETL_L_PARTY().trans_to_PARTY_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_SERVICE");
-			new ETL_L_SERVICE().trans_to_SERVICE_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_TRANSFER");
-			new ETL_L_TRANSFER().trans_to_TRANSFER_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_TRANSACTION");
-			new ETL_L_TRANSACTION().trans_to_TRANSACTION_LOAD(logData, fedServer, runTable);
-			
-			logData.setPROGRAM_NO("ETL_L_ERROR_LOG");
-			new ETL_L_ERROR_LOG().trans_to_Error_Log(logData, fedServer, runTable);
+			/** 平行化區塊  End **/
 			
 			supplementFX_Rate(logData);
 
@@ -659,8 +908,8 @@ public class ETL_C_PROCESS {
 			// 有錯誤釋出錯誤訊息   不往下繼續進行
 			if (returnCode != 0) {
 				String errorMessage = cstmt.getString(6);
-	            System.out.println("####writeNewGenerationStatus - Error Code = " + returnCode + ", Error Message : " + errorMessage);
-	            ETL_P_Log.write_Runtime_Log("updateNewGenerationETLStatus", "####writeNewGenerationStatus - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            System.out.println("####updateNewGenerationETLStatus - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            ETL_P_Log.write_Runtime_Log("updateNewGenerationETLStatus", "####updateNewGenerationETLStatus - Error Code = " + returnCode + ", Error Message : " + errorMessage);
 	            return false;
 			}
 			
@@ -907,20 +1156,58 @@ public class ETL_C_PROCESS {
 		}
 	}
 	
+	private static boolean updateNewGenerationMigStatus(Date record_date, String central_no, String mig_Status, String discription) {
+		
+		try {
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Migration.update_New_Generation_MigStatus(?,?,?,?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection();
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setDate(2, new java.sql.Date(record_date.getTime()));
+			cstmt.setString(3, central_no);
+			cstmt.setString(4, mig_Status);
+			cstmt.setString(5, discription);
+			cstmt.registerOutParameter(6, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(6);
+	            System.out.println("####updateNewGenerationMigStatus - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            ETL_P_Log.write_Runtime_Log("updateNewGenerationMigStatus", "####updateNewGenerationMigStatus - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            return false;
+			}
+			
+			return true;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			ETL_P_Log.write_Runtime_Log("updateNewGenerationETLStatus", ex.getMessage());
+			return false;
+		}
+	}
+	
 	public static void main(String[] argv) {
 		try {
 			
 			System.out.println("test Start");
 			
-//			copyCalendar_ToGAMLDB();
-			
-			String[] dateAry = new String[3];
-			guery_GAML_Partition_Info("018", dateAry);
-			System.out.println(dateAry[0]);
-			System.out.println(dateAry[1]);
-			System.out.println(dateAry[2]);
+			updateNewGenerationMigStatus(new SimpleDateFormat("yyyyMMdd").parse("20180608"), "600", "Wait", "");
 			
 			System.out.println("test End");
+			
+//			copyCalendar_ToGAMLDB();
+			
+//			String[] dateAry = new String[3];
+//			guery_GAML_Partition_Info("018", dateAry);
+//			System.out.println(dateAry[0]);
+//			System.out.println(dateAry[1]);
+//			System.out.println(dateAry[2]);
 			
 //			String[] serverInfo = new String[3];
 //			serverInfo[0] = "ETL_S1";

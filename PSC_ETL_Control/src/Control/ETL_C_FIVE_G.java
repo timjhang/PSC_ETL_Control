@@ -34,6 +34,10 @@ public class ETL_C_FIVE_G {
 				System.out.println("####ETL_C_FIVE_G - 寫入NewGenerationStatus紀錄失敗，不繼續作業!!");
 				return false;
 			}
+			
+			// Transaction超過一定門檻時執行reorg(產生新一代後即可能進行ETL作業, 故先進行可能的reorg)
+			// 但reorg時間可能達45分鐘之久, 務必需要進行註冊, 產新一代作業已經開始。
+			reorgTransaction(central_No, oldDate);
 				
 			if (!detachTablePartiton(central_No, newDate)) {
 				throw new Exception("detach partition " + central_No + " " + new SimpleDateFormat("yyyyMMdd").format(newDate) + " 出現錯誤!");
@@ -406,7 +410,7 @@ public class ETL_C_FIVE_G {
 	}
 	
 	// 更新5代Table 記錄檔  prepare status
-	private static boolean updateNewGenerationPrepareStatus(Date record_date, String central_no, String prepareStatus, String discription) {
+	public static boolean updateNewGenerationPrepareStatus(Date record_date, String central_no, String prepareStatus, String discription) {
 		
 		try {
 			
@@ -509,6 +513,50 @@ public class ETL_C_FIVE_G {
 			return false;
 		}
 			
+	}
+	
+	// Transaction超過一定門檻時執行reorg
+	public static void reorgTransaction(String central_no, Date oldRecordDate) {
+		
+		try {
+			
+			System.out.println("####ETL_C_New5G - reorgTransaction 單位:" + central_no + " Start  " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Load.reorgTransaction(?,?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection(central_no);
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setDate(2, new java.sql.Date(oldRecordDate.getTime()));
+			cstmt.registerOutParameter(3, Types.INTEGER);
+			cstmt.registerOutParameter(4, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(4);
+	            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+//		            throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+			}
+			
+			int isExecute = cstmt.getInt(3);
+			
+			System.out.println("isExecute = " + isExecute);
+			if (isExecute > 0) {
+				System.out.println("單位: " + central_no + "  Transaction  已執行Reorg!!");
+			} else {
+				System.out.println("單位: " + central_no + "  Transaction  Reorg未執行。");
+			}
+			
+			System.out.println("####ETL_C_New5G - reorgTransaction 單位:" + central_no + " End  " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 	
 	public static void main(String[] argv) throws Exception {

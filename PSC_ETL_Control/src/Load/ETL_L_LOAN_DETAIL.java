@@ -10,17 +10,33 @@ import DB.ConnectionHelper;
 import Profile.ETL_Profile;
 import Tool.ETL_Tool_CastObjUtil;
 
-public class ETL_L_LOAN_DETAIL {
+public class ETL_L_LOAN_DETAIL extends Load {
 
+	public ETL_L_LOAN_DETAIL() {
+		
+	}
+
+	public ETL_L_LOAN_DETAIL(ETL_Bean_LogData logData, String fedServer, String runTable) {
+		super(logData, fedServer, runTable);
+	}
+
+	@Override
+	public void load_File() {
+		try {
+			trans_to_LOAN_DETAIL_LOAD(this.logData, this.fedServer, this.runTable);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
+	}
 	
-	// 觸發DB2載入Procedure, 資料載入LOAN_DETAIL_LOAD_TEMP  // TODO
+	// 觸發DB2載入Procedure, 資料載入LOAN_DETAIL_LOAD_TEMP  
 	public void trans_to_LOAN_DETAIL_LOAD(ETL_Bean_LogData logData, String fedServer, String runTable) {
 		
-		System.out.println("#######Load - ETL_L_LOAN_DETAIL - Start"); // TODO
+		System.out.println("#######Load - ETL_L_LOAN_DETAIL - Start"); 
 		
 		try {
 			
-			// TODO
+			
 			String sql = "{call " + ETL_Profile.db2TableSchema + ".Load.loadETL_LOAN_DETAIL_LOAD(?,?,?,?,?)}";
 			
 			Connection con = ConnectionHelper.getDB2Connection(logData.getCENTRAL_NO().trim());
@@ -47,9 +63,8 @@ public class ETL_L_LOAN_DETAIL {
 			ex.printStackTrace();
 		}
 		
-		System.out.println("#######Load - ETL_L_LOAN_DETAIL - End"); // TODO
+		System.out.println("#######Load - ETL_L_LOAN_DETAIL - End"); 
 		
 	}
-
 
 }

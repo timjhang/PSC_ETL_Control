@@ -99,9 +99,6 @@ public class ETL_C_New5G {
 			return;
 		}
 		
-		// Transaction超過一定門檻時執行reorg(產生新一代後即可能進行ETL作業, 故先進行可能的reorg)
-		reorgTransaction(central_list.get(0), beforeRecordDate);
-		
 		// 建立新一代load temp Table
 		if (!ETL_C_FIVE_G.generateNewGTable(beforeRecordDate, nextRecordDate, central_list.get(0), "TEMP")) {
 			System.out.println("####ETL_C_New5G - 建立" + central_list.get(0) + "新一代Table 資料日期" 
@@ -199,49 +196,6 @@ public class ETL_C_New5G {
 		}
 	}
 	
-	// Transaction超過一定門檻時執行reorg
-	public static void reorgTransaction(String central_no, Date oldRecordDate) {
-		
-		try {
-			
-			System.out.println("####ETL_C_New5G - reorgTransaction 單位:" + central_no + " Start  " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
-			
-			String sql = "{call " + ETL_Profile.db2TableSchema + ".Load.reorgTransaction(?,?,?,?)}";
-			
-			Connection con = ConnectionHelper.getDB2Connection(central_no);
-			CallableStatement cstmt = con.prepareCall(sql);
-			
-			cstmt.registerOutParameter(1, Types.INTEGER);
-			cstmt.setDate(2, new java.sql.Date(oldRecordDate.getTime()));
-			cstmt.registerOutParameter(3, Types.INTEGER);
-			cstmt.registerOutParameter(4, Types.VARCHAR);
-			
-			cstmt.execute();
-			
-			int returnCode = cstmt.getInt(1);
-			
-			// 有錯誤釋出錯誤訊息   不往下繼續進行
-			if (returnCode != 0) {
-				String errorMessage = cstmt.getString(4);
-	            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
-//	            throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
-			}
-			
-			int isExecute = cstmt.getInt(3);
-			
-			System.out.println("isExecute = " + isExecute);
-			if (isExecute > 0) {
-				System.out.println("單位: " + central_no + "  Transaction  已執行Reorg!!");
-			} else {
-				System.out.println("單位: " + central_no + "  Transaction  Reorg未執行。");
-			}
-			
-			System.out.println("####ETL_C_New5G - reorgTransaction 單位:" + central_no + " End  " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
-			
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-	}
 	
 	public static void main(String[] argvs) {
 		
@@ -249,7 +203,7 @@ public class ETL_C_New5G {
 			
 			System.out.println("測試開始");
 			
-			reorgTransaction("951", new SimpleDateFormat("yyyyMMdd").parse("20180423"));
+//			reorgTransaction("951", new SimpleDateFormat("yyyyMMdd").parse("20180423"));
 			
 			System.out.println("測試結束");
 			

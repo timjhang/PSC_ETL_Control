@@ -10,7 +10,24 @@ import DB.ConnectionHelper;
 import Profile.ETL_Profile;
 import Tool.ETL_Tool_CastObjUtil;
 
-public class ETL_L_FX_RATE {
+public class ETL_L_FX_RATE extends Load {
+	
+	public ETL_L_FX_RATE() {
+		
+	}
+
+	public ETL_L_FX_RATE(ETL_Bean_LogData logData, String fedServer, String runTable) {
+		super(logData, fedServer, runTable);
+	}
+
+	@Override
+	public void load_File() {
+		try {
+			trans_to_FX_RATE_LOAD(this.logData, this.fedServer, this.runTable);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
+	}
 	
 	// 觸發DB2載入Procedure, 資料載入FX_RATE_LOAD_TEMP
 	public void trans_to_FX_RATE_LOAD(ETL_Bean_LogData logData, String fedServer, String runTable) {

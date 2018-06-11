@@ -160,7 +160,7 @@ public class ETL_C_Rerun {
 	    		}
 	    		
 	    		// Transaction超過一定門檻時執行reorg(產生新一代後即可能進行ETL作業, 故先進行可能的reorg)
-	    		ETL_C_New5G.reorgTransaction(rerun_Central_No, beforeRecordDate);
+	    		ETL_C_FIVE_G.reorgTransaction(rerun_Central_No, beforeRecordDate);
 	    		
 	    		// 建立新一代load rerun Table
 	    		if (!ETL_C_FIVE_G.generateNewGTable(beforeRecordDate, rerunRecordDate, rerun_Central_No, "RERUN")) {
