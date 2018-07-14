@@ -350,8 +350,8 @@ public class ETL_C_PROCESS {
 		}
 		
 		try {
-			// 更新 新5代製作紀錄檔
-			updateNewGenerationMigStatus(record_Date, central_no, "Start", "");
+//			// 更新 新5代製作紀錄檔 - Migration Start
+//			updateNewGenerationMigStatus(record_Date, central_no, "Start", "");
 			
 			// 呼叫ETL Server進行initial作業
 			if (!ETL_C_CallWS.call_ETL_Server_initETLserver(etlServerInfo[2])) {
@@ -409,7 +409,7 @@ public class ETL_C_PROCESS {
 				throw new Exception("L Master Log已存在\n" + exeInfo);
 			}
 			// 進行L系列程式
-			if (!exeLfunction(etlServerInfo[0], batch_No, central_no, exc_record_dateStr, upload_no, before_record_dateStr, "TEMP")) {
+			if (!exeLfunction(etlServerInfo[0], batch_No, central_no, exc_record_dateStr, upload_no, before_record_dateStr, "RERUN")) {
 				throw new Exception("#### ETL_C_PROCESS - executeMigration - exeLfunction 發生錯誤！ " + server_no);
 			}
 			// 更新 L Master Log
@@ -419,12 +419,13 @@ public class ETL_C_PROCESS {
 //			// 執行runstate程式
 //			ETL_C_Master.runStateSRC(central_no);
 			
-			// 更新 新5代製作紀錄檔 - Migration結束
-			updateNewGenerationMigStatus(record_Date, central_no, "End", "");
+//			// 更新 新5代製作紀錄檔 - Migration結束
+//			updateNewGenerationMigStatus(record_Date, central_no, "End", "");
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			ETL_P_Log.write_Runtime_Log("executeMigration", ex.getMessage());
+			// 更新 新5代製作紀錄檔 - Migration Error
 			updateNewGenerationMigStatus(record_Date, central_no, "Error", ex.getMessage());
 			exeResult = false;
 		}
@@ -440,6 +441,160 @@ public class ETL_C_PROCESS {
 		}
 		
 		System.out.println("#### ETL_C_PROCESS - executeMigration  End");
+		
+		return exeResult;
+		
+	}
+	
+	// 執行Migration Daily Run
+	public static boolean executeMigETL(String[] etlServerInfo, String batch_No, String central_no, String[] ptr_upload_no, Date record_Date, Date before_record_date) {
+		
+		System.out.println("#### ETL_C_PROCESS - executeMigETL  Start");
+		
+		// for test
+		System.out.println("Server_No : " + etlServerInfo[0] + " , Server : " + etlServerInfo[1] + " , IP : " + etlServerInfo[2]);
+		System.out.println("Batch_No = " + batch_No);
+		System.out.println("Central_no = " + central_no);
+		System.out.println("Record_Date = " + record_Date);
+		System.out.println("Before_record_date = " + before_record_date);
+		
+		String exeInfo = "Server_No : " + etlServerInfo[0] + " , Server : " + etlServerInfo[1] + " , IP : " + etlServerInfo[2] + "\n";
+		exeInfo = exeInfo + "Batch_No = " + batch_No + "\n";
+		exeInfo = exeInfo + "Central_no = " + central_no + "\n";
+		exeInfo = exeInfo + "Record_Date = " + record_Date + "\n";
+		exeInfo = exeInfo + "Before_record_date = " + before_record_date + "\n";
+		
+		String server_no = etlServerInfo[0];
+		
+		// ETL Server下載特定中心資料
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+		String[] fileInfo = new String[3];
+		String exc_record_dateStr = sdf.format(record_Date);
+		String upload_no = "";
+		String before_record_dateStr = sdf.format(before_record_date);
+		boolean exeResult = true;
+		
+		// **更新 Server 狀態使用中
+		try {
+			update_Server_Status(etlServerInfo[0], "U");
+		} catch (Exception ex) {
+			System.out.println("更新Server狀態\"使用中\"失敗 " + server_no);
+			ETL_P_Log.write_Runtime_Log("executeMigETL", "更新Server狀態\"使用中\"失敗 " + server_no);
+			ex.printStackTrace();
+			ETL_P_Log.write_Runtime_Log("executeMigETL", ex.getMessage());
+			return false;
+		}
+		
+		try {
+			// 更新 新5代製作紀錄檔
+			updateNewGenerationETLStatus(record_Date, central_no, "Start", "");
+			
+			// 呼叫ETL Server進行initial作業
+			if (!ETL_C_CallWS.call_ETL_Server_initETLserver(etlServerInfo[2])) {
+//					System.out.println("#### ETL_C_PROCESS - executeMigETL - call_ETL_Server_initETLserver 發生錯誤！ " + server_no);
+//					return false;
+				throw new Exception("#### ETL_C_PROCESS - executeMigETL - call_ETL_Server_initETLserver 發生錯誤！ " + server_no);
+			}
+			
+			// 下載中心檔案
+			ETL_Bean_Response response = ETL_C_CallWS.call_ETL_Server_getUploadFileInfo(etlServerInfo[2], central_no, "", null);
+
+			if (response.isSuccess()) {
+				//取出物件轉型, <資料日期|上傳批號 |zip檔名>
+				fileInfo = (String[]) response.getObj();
+			}
+			
+			// 執行下載
+			if (!response.isSuccess()) {
+				throw new Exception("#### ETL_C_PROCESS - executeMigETL - call_ETL_Server_getUploadFileInfo 發生錯誤！ " + server_no);
+			}
+
+			upload_no = fileInfo[1];
+			ptr_upload_no[0] = upload_no;
+			
+			System.out.println("#### ETL_C_PROCESS fileInfo[0]" + fileInfo[0] + " " + server_no);
+			System.out.println("#### ETL_C_PROCESS fileInfo[1]" + fileInfo[1] + " " + server_no);
+	
+			// 更新報送單位狀態"使用中"
+			updateCentralTime(central_no, record_Date, upload_no, "Start");
+			
+			// 寫入E Master Log
+			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "E", etlServerInfo[0])) {
+				throw new Exception("E Master Log已存在\n" + exeInfo);
+			};
+			// 進行E系列程式
+			if (!ETL_C_CallWS.call_ETL_Server_Efunction(etlServerInfo[2], "", batch_No, central_no, exc_record_dateStr, upload_no)) {
+				throw new Exception("#### ETL_C_PROCESS - executeMigETL - call_ETL_Server_Efunction 發生錯誤！ " + server_no);
+			}
+			// 更新 E Master Log
+			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "E", "E", "Y", "");
+			
+			
+			// 寫入T Master Log
+			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "T", etlServerInfo[0])) {
+				throw new Exception("T Master Log已存在\n" + exeInfo);
+			}
+			// 進行T系列程式
+			if (!ETL_C_CallWS.call_ETL_Server_Tfunction(etlServerInfo[2], "", batch_No, central_no, exc_record_dateStr, upload_no, before_record_dateStr)) {
+				throw new Exception("#### ETL_C_PROCESS - executeMigETL - call_ETL_Server_Tfunction 發生錯誤！ " + server_no);
+			}
+			// 更新 T Master Log
+			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "T", "E", "Y", "");
+			
+			
+			// 寫入L Master Log
+			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "L", etlServerInfo[0])) {
+				throw new Exception("L Master Log已存在\n" + exeInfo);
+			}
+			// 進行L系列程式
+			if (!exeLfunction(etlServerInfo[0], batch_No, central_no, exc_record_dateStr, upload_no, before_record_dateStr, "RERUN")) {
+				throw new Exception("#### ETL_C_PROCESS - executeMigETL - exeLfunction 發生錯誤！ " + server_no);
+			}
+			// 更新 L Master Log
+			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "L", "E", "Y", "");
+
+			
+			// 執行暫存Table(load_temp)併入五代
+			addNew5G(batch_No, record_Date, central_no, upload_no, "RERUN");
+			
+			
+			// 更新 新5代製作紀錄檔
+			updateNewGenerationETLStatus(record_Date, central_no, "End", "");
+			
+//			// 更新 新5代製作紀錄檔 - Migration結束
+//			updateNewGenerationMigStatus(record_Date, central_no, "End", "");
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			ETL_P_Log.write_Runtime_Log("executeMigETL", ex.getMessage());
+			// 更新ETL  執行狀態
+			updateNewGenerationETLStatus(record_Date, central_no, "Error", ex.getMessage());
+			// 更新 新5代製作紀錄檔 - Migration Error
+			updateNewGenerationMigStatus(record_Date, central_no, "Error", ex.getMessage());
+			exeResult = false;
+		} finally {
+			// 更新報送單位狀態"執行完畢"
+			try {
+				updateCentralTime(central_no, record_Date, upload_no, "End");
+			} catch (Exception ex) {
+				System.out.println("更新Central:" + central_no + " - 狀態:\"執行完畢\"失敗 " + server_no);
+				ETL_P_Log.write_Runtime_Log("executeMigETL", "更新Central:" + central_no + " - 狀態:\"執行完畢\"失敗 " + server_no);
+				ex.printStackTrace();
+				exeResult = false;
+			}
+		}
+		
+		// **更新 Server 狀態可使用
+		try {
+			update_Server_Status(etlServerInfo[0], "Y");
+		} catch (Exception ex) {
+			System.out.println("更新Server狀態\"可使用\"失敗 " + server_no);
+			ETL_P_Log.write_Runtime_Log("executeMigETL", "更新Server狀態\"可使用\"失敗 " + server_no);
+			ex.printStackTrace();
+			exeResult = false;
+		}
+		
+		System.out.println("#### ETL_C_PROCESS - executeMigETL  End");
 		
 		return exeResult;
 		
@@ -639,7 +794,9 @@ public class ETL_C_PROCESS {
 	// 執行L系列程式
 	private static boolean exeLfunction(String server_No, String batch_No, String exc_central_no, String record_DateStr,
 			String upload_No, String before_record_dateStr, String tableType) {
-		System.out.println("call_ETL_Server_Lfunction : 開始執行");
+		
+		System.out.println("call_ETL_Server_Lfunction : 開始執行  " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+		
 		try {
 
 			ETL_Bean_LogData logData = new ETL_Bean_LogData();
@@ -810,9 +967,10 @@ public class ETL_C_PROCESS {
 			logData2.setPROGRAM_NO("ETL_L_PARTY_EMAIL");
 			loads.add(new ETL_L_PARTY_EMAIL(logData2, fedServer, runTable));
 
-			logData2 = logData.clone();
-			logData2.setPROGRAM_NO("ETL_L_PARTY_NATINOALITY");
-			loads.add(new ETL_L_PARTY_NATINOALITY(logData2, fedServer, runTable));
+			// 2018.06.27  國籍檔確認取消使用 James
+//			logData2 = logData.clone();
+//			logData2.setPROGRAM_NO("ETL_L_PARTY_NATINOALITY");
+//			loads.add(new ETL_L_PARTY_NATINOALITY(logData2, fedServer, runTable));
 
 			logData2 = logData.clone();
 			logData2.setPROGRAM_NO("ETL_L_PARTY_PARTY_REL");
@@ -872,7 +1030,11 @@ public class ETL_C_PROCESS {
 			}
 			/** 平行化區塊  End **/
 			
+			// 匯率檔檢查補漏
 			supplementFX_Rate(logData);
+			
+			// 擔保品, 保證人檔對party進行補漏作業
+			ETL_C_Comm.SupplementParty(logData, fedServer, runTable);
 
 		} catch (Exception ex) {
 			System.out.println("call_ETL_Server_Lfunction : 發生錯誤");
@@ -880,7 +1042,9 @@ public class ETL_C_PROCESS {
 			ex.printStackTrace();
 			return false;
 		}
-		System.out.println("call_ETL_Server_Lfunction : 結束");
+		
+		System.out.println("call_ETL_Server_Lfunction : 結束  " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+		
 		return true;
 	}
 	
@@ -1094,6 +1258,7 @@ public class ETL_C_PROCESS {
 			// 欲drop資料日期
 			Date dropDate = null;
 			
+//			if (Integer.valueOf(partition_Info[0]) >= 6) { // for test
 			if (Integer.valueOf(partition_Info[0]) >= 5) {
 				dropDate = ETL_Tool_StringX.toUtilDate(partition_Info[1]);
 			}
@@ -1156,7 +1321,7 @@ public class ETL_C_PROCESS {
 		}
 	}
 	
-	private static boolean updateNewGenerationMigStatus(Date record_date, String central_no, String mig_Status, String discription) {
+	public static boolean updateNewGenerationMigStatus(Date record_date, String central_no, String mig_Status, String discription) {
 		
 		try {
 			

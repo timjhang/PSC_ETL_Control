@@ -26,6 +26,7 @@ public class ETL_Profile {
 			ETL_Tool_DES.decrypt("58fcd8a8d6fa0357b43596ad4e09a6c4493ff949a"
 					+ "610bfc777432c83a5696d7645fb4928d65fcffb14ecc533031ffd"
 					+ "1ea810009434c9f055571abf832b087a8c949513758b0ed27dd81b3b4aede62aba");
+//	public final static String db2Url = "jdbc:db2://172.18.21.207:50000/GAMLDB:currentschema=SRC;currentFunctionPath=SRC;";
 
 	public final static String db2User = ETL_Tool_DES.decrypt("0f62db871d1d0101");
 	public final static String db2Password = ETL_Tool_DES.decrypt("44ee592ddae3f0d2c53af1a4a004b34f");
@@ -38,6 +39,7 @@ public class ETL_Profile {
 	public final static String db2UrlGAMLpre = 
 			ETL_Tool_DES.decrypt("58fcd8a8d6fa0357b43596ad4e09a6c4493f"
 					+ "f949a610bfc777432c83a5696d76a4a51f2d50ba1358");
+//	public final static String db2UrlGAMLpre = "jdbc:db2://172.18.21.207:50000/GAML";
 	public final static String db2UrlGAMLafter = 
 			ETL_Tool_DES.decrypt("210854254ff94eec32f326325a431d9a248f310"
 					+ "40be3a7193b4f37cefd0fe16ddafed100689a1ac85961605e87949653");
@@ -116,8 +118,13 @@ public class ETL_Profile {
 	public final static String ETL_E_CLP_RUN_SCRIPT_FILE_PATH = 
 			ETL_Tool_DES.decrypt("021d9d8f41af834dbbd0cc67793869649ee8d199407624c0");
 	
+	//EMail 設定參數
+	public final static String EMAIL_SERVER_HOST = ETL_Tool_DES.decrypt("4ac3ce9609e110fee69d06fd1ec8c823");
+	public final static int EMAIL_SERVER_PORT = Integer.parseInt(ETL_Tool_DES.decrypt("f8359cb46aebc26d"));
+	public final static String EMAIL_SERVER_ADDRESS ="AML_ETL@agribank.com";
+	
 	// for test
-	public final static String Before_Record_Date_Str = "20180607";
-	public final static String Record_Date_Str = "20180608";
+	public final static String Before_Record_Date_Str = "20180712";
+	public final static String Record_Date_Str = "20180713";
 	
 }

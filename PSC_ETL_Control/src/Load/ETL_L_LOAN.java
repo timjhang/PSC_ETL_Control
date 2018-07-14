@@ -32,15 +32,16 @@ public class ETL_L_LOAN extends Load {
 	// 觸發DB2載入Procedure, 資料載入LOAN_DETAIL_LOAD_TEMP  
 	public void trans_to_LOAN_LOAD(ETL_Bean_LogData logData, String fedServer, String runTable) {
 		
-		System.out.println("#######Load - ETL_L_LOAN - Start"); 
+		System.out.println("#######Load - ETL_L_LOAN - Start");
+		
+		Connection con = null;
+		CallableStatement cstmt = null;
 		
 		try {
-			
-			
 			String sql = "{call " + ETL_Profile.db2TableSchema + ".Load.loadETL_LOAN_LOAD(?,?,?,?,?)}";
 			
-			Connection con = ConnectionHelper.getDB2Connection(logData.getCENTRAL_NO().trim());
-			CallableStatement cstmt = con.prepareCall(sql);
+			con = ConnectionHelper.getDB2Connection(logData.getCENTRAL_NO().trim());
+			cstmt = con.prepareCall(sql);
 			
 			Struct dataStruct = con.createStruct("T_LOGDATA", ETL_Tool_CastObjUtil.castObjectArr(logData));
 			
@@ -61,6 +62,17 @@ public class ETL_L_LOAN extends Load {
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
+		} finally {
+			try {
+				if (con != null) {
+					con.close();
+				}
+				if (cstmt != null) {
+					cstmt.close();
+				}
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
 		}
 		
 		System.out.println("#######Load - ETL_L_LOAN - End"); 

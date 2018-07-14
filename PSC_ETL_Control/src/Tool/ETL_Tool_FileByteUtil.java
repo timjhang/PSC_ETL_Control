@@ -147,7 +147,8 @@ public class ETL_Tool_FileByteUtil {
 		// 1:true 2: false 如格式都正確則是資料總筆數
 		int isFileOK = 0;
 		boolean isInsert = false;
-		byte[]bytes =new byte[99999999];
+//		byte[]bytes =new byte[99999999];
+		byte[]bytes =new byte[50000000];
 		
 		FileInputStream fileInputStream = new FileInputStream(path);
 		ETL_Tool_JBReader bufferedReader = new ETL_Tool_JBReader(fileInputStream, buffer_size);

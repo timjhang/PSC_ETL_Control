@@ -25,10 +25,6 @@ public class ETL_C_FIVE_G {
 		// tableType 預定有兩種 temp, rerun(temp:正常ETL使用, rerun:Rerun使用)
 		
 		try {
-			// FOR TEST
-//			oldDate = ETL_Tool_StringX.toUtilDate("20180111");
-//			newDate = ETL_Tool_StringX.toUtilDate("20180112");
-
 			// 寫入5代Table 記錄檔
 			if (!writeStartGenerationStatus(newDate, central_No)) {
 				System.out.println("####ETL_C_FIVE_G - 寫入NewGenerationStatus紀錄失敗，不繼續作業!!");
@@ -94,10 +90,6 @@ public class ETL_C_FIVE_G {
 		// tableType 預定有兩種 temp, rerun(temp:正常ETL使用, rerun:Rerun使用)
 		
 		try {
-			// FOR TEST
-//			oldDate = ETL_Tool_StringX.toUtilDate("20180111");
-//			newDate = ETL_Tool_StringX.toUtilDate("20180112");
-
 			// 產生新一代Table Script
 			createPasteTableCLPScript(dropDate, newDate, central_No, "ACCOUNT", tableType);
 			createPasteTableCLPScript(dropDate, newDate, central_No, "ACCOUNT_PROPERTY", tableType);

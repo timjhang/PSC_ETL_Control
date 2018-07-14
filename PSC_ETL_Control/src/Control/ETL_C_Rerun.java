@@ -229,9 +229,14 @@ public class ETL_C_Rerun {
 	    		// 執行正常完整, 則寫入
 	    		if (etlSuccess) {
 	    			
-	    			// 執行runstate程式
-		    		ETL_C_Master.runStateSRC(rerun_Central_No);
-		    		
+	    			if (isFormal) {
+	    				// 執行runstate程式
+			    		ETL_C_Master.runStateSRC(rerun_Central_No);
+	    			} else {
+	    				// 執行runstate程式
+			    		ETL_C_Master.runStateSRC(rerun_Central_No);
+	    			}
+	    			
 		    		if (isFormal) {
 		    			// 寫入ETL完成紀錄ETL_LOAD_GAML
 		    			boolean isSuccess = write_rerun_ETL_LOAD_GAML(batchNo, rerunRecordDate, rerun_Central_No, ptr_upload_no[0]);
@@ -331,7 +336,7 @@ public class ETL_C_Rerun {
 	}
 	
 	// 取得Rerun批次編號(序號表ETL_PARAMETER_INFO)
-	private static String getRerun_BatchNo() {
+	public static String getRerun_BatchNo() {
 		
 		String result = "";
 		

@@ -34,13 +34,14 @@ public class ETL_L_LOAN_DETAIL extends Load {
 		
 		System.out.println("#######Load - ETL_L_LOAN_DETAIL - Start"); 
 		
+		Connection con = null;
+		CallableStatement cstmt = null;
+		
 		try {
-			
-			
 			String sql = "{call " + ETL_Profile.db2TableSchema + ".Load.loadETL_LOAN_DETAIL_LOAD(?,?,?,?,?)}";
 			
-			Connection con = ConnectionHelper.getDB2Connection(logData.getCENTRAL_NO().trim());
-			CallableStatement cstmt = con.prepareCall(sql);
+			con = ConnectionHelper.getDB2Connection(logData.getCENTRAL_NO().trim());
+			cstmt = con.prepareCall(sql);
 			
 			Struct dataStruct = con.createStruct("T_LOGDATA", ETL_Tool_CastObjUtil.castObjectArr(logData));
 			
@@ -61,6 +62,17 @@ public class ETL_L_LOAN_DETAIL extends Load {
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
+		} finally {
+			try {
+				if (con != null) {
+					con.close();
+				}
+				if (cstmt != null) {
+					cstmt.close();
+				}
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
 		}
 		
 		System.out.println("#######Load - ETL_L_LOAN_DETAIL - End"); 

@@ -4,6 +4,10 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.Types;
 //import java.util.Calendar;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.springframework.core.SimpleAliasRegistry;
 
 import DB.ConnectionHelper;
 import Profile.ETL_Profile;
@@ -53,6 +57,15 @@ public class ETL_C_BatchTime {
   			return true;
   		}
 		
+	}
+	
+	public static void main(String[] argv) {
+		
+		System.out.println("Start time : " + new SimpleDateFormat("yyyyMMdd  HHmmss").format(new Date()));
+		
+		System.out.println(isExecute("1028", " 9"));
+		
+		System.out.println("End time : " + new SimpleDateFormat("yyyyMMdd  HHmmss").format(new Date()));
 	}
 	
 }

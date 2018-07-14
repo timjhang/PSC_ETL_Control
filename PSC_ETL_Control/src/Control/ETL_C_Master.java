@@ -55,7 +55,7 @@ public class ETL_C_Master {
 		// 若Rerun執行則, 則ETL正常執行等待
     	if (isRerunExecute()) {
     		System.out.println("####ETL_C_Master - Rerun 作業進行, 不進行ETL作業。  " + runBatchNo);
-    		ETL_P_Log.write_Runtime_Log("ETL_C_Master", "####ETL_C_Master - Rerun 作業進行中, 不進行ETL作業。  " + runBatchNo);
+    		ETL_P_Log.write_Runtime_Log("ETL_C_Master", "####ETL_C_Master - Rerun 作業進行, 不進行ETL作業。  " + runBatchNo);
     		return;
     	}
 		
@@ -188,18 +188,21 @@ public class ETL_C_Master {
 					ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML失敗!");
 				}
 			} else {
-				// 寫入ETL完成紀錄ETL_LOAD_GAML
-				boolean isSuccess = write_ETL_LOAD_GAML(batchNo, record_date, readyCentralList.get(0), ptr_upload_no[0]);
+//				// 寫入ETL完成紀錄ETL_LOAD_GAML
+//				boolean isSuccess = write_ETL_LOAD_GAML(batchNo, record_date, readyCentralList.get(0), ptr_upload_no[0]);
+//				
+//				System.out.println("batchNo = " + batchNo + " , record_date = " + record_date 
+//						+ " , central_no = " + readyCentralList.get(0) + " , upload_no = " + ptr_upload_no[0]);
+//				if (isSuccess) {
+//					System.out.println("寫入ETL_LOAD_GAML成功!");
+//					ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML成功!");
+//				} else {
+//					System.out.println("寫入ETL_LOAD_GAML失敗!");
+//					ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML失敗!");
+//				}
 				
-				System.out.println("batchNo = " + batchNo + " , record_date = " + record_date 
-						+ " , central_no = " + readyCentralList.get(0) + " , upload_no = " + ptr_upload_no[0]);
-				if (isSuccess) {
-					System.out.println("寫入ETL_LOAD_GAML成功!");
-					ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML成功!");
-				} else {
-					System.out.println("寫入ETL_LOAD_GAML失敗!");
-					ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML失敗!");
-				}
+//				System.out.println("跳過ETL_LOAD_GAML寫入，因為是全量！");
+				System.out.println("跳過ETL_LOAD_GAML寫入，因為需檢查資料正確性！");
 			}
 			
 		}
@@ -619,7 +622,7 @@ public class ETL_C_Master {
 	}
 	
 	// 寫入ETL完成紀錄
-	private static boolean write_ETL_LOAD_GAML(String batch_no, Date record_date, String central_no, String upload_no) {
+	public static boolean write_ETL_LOAD_GAML(String batch_no, Date record_date, String central_no, String upload_no) {
 		
 		try {
 			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.write_ETL_LOAD_GAML(?,?,?,?,?,?)}";
@@ -851,9 +854,9 @@ public class ETL_C_Master {
 //			System.out.println(hasMasterLog(new SimpleDateFormat("yyyyMMdd").parse("20180608"), "600", "002", "ETL00017"));
 //			System.out.println(hasMasterLog(new SimpleDateFormat("yyyyMMdd").parse("20180608"), "600", "002", "MIG00013"));
 //			System.out.println(hasMasterLog(new SimpleDateFormat("yyyyMMdd").parse("20180608"), "600", "002", "MIG00012"));
-			System.out.println(hasMasterLog(new SimpleDateFormat("yyyyMMdd").parse("20180313"), "910", "002", "ETL01001"));
-			System.out.println(hasMasterLog(new SimpleDateFormat("yyyyMMdd").parse("20180425"), "928", "003", "RER00028"));
-			System.out.println(hasMasterLog(new SimpleDateFormat("yyyyMMdd").parse("20180425"), "928", "002", "RER00028"));
+//			System.out.println(hasMasterLog(new SimpleDateFormat("yyyyMMdd").parse("20180313"), "910", "002", "ETL01001"));
+//			System.out.println(hasMasterLog(new SimpleDateFormat("yyyyMMdd").parse("20180425"), "928", "003", "RER00028"));
+//			System.out.println(hasMasterLog(new SimpleDateFormat("yyyyMMdd").parse("20180425"), "928", "002", "RER00028"));
 			
 			System.out.println("ETL_C_Master 測試結束!");
 			

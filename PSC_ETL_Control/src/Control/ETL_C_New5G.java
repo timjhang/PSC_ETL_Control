@@ -50,7 +50,7 @@ public class ETL_C_New5G {
     	
     	System.out.println("####ETL_C_New5G Start " + runBatchNo + "  " + new Date());
     	
-    	 Date record_date;
+    	Date record_date;
     	if (isFormal) {
     		// 正式版本
 	    	// 產生資料日期(昨天)
@@ -60,8 +60,8 @@ public class ETL_C_New5G {
     	} else {
     		// 測試版本
     		try {
-    			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Before_Record_Date_Str);
-//    			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Record_Date_Str);
+//    			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Before_Record_Date_Str);
+    			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Record_Date_Str);
     		} catch (Exception ex) {
     			ex.printStackTrace();
     			record_date = new Date();
@@ -187,7 +187,7 @@ public class ETL_C_New5G {
 	            return false;
 			}
 			
-			System.out.println("刪除" + central_no + " load_temp 成功!!");
+			System.out.println("刪除" + central_no + " LOAD_" + tableType + " 成功!!");
 			return true;
 			
 		} catch (Exception ex) {
