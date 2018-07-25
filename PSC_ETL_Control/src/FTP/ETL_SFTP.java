@@ -16,51 +16,16 @@ import org.apache.commons.vfs2.provider.sftp.SftpFileSystemConfigBuilder;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 
+import Control.ETL_C_Profile;
+
 public class ETL_SFTP {
-
-	public static void main(String[] args) throws SftpException, IOException {
-
-		String hostName = "172.18.21.206"; // jar檔預設port:22
-		String port = "22";
-		String username = "tim";
-		String password = "tim7146";
-		String localhostdir = "\\";
-//		File savedir = new File("D:\\testB");
+	public final static String FILE_TEMP = "C:/ETL/DM/";
 
 
-//		List<String> list = new ArrayList<String>();
-//		list = listFiles(hostName, Integer.valueOf(port), username, password, localhostdir);
-//		for (int i = 0; i < list.size(); i++) {
-//			System.out.println(list.get(i));
-//		}
-		
-		String localFilePath = "C:/Users/10404003/Desktop/temp/Sftp_Download/test4.txt";
-		
-		// 下載
-//		SFTP.download(hostName, port, username, password, localFilePath, "/test4.txt");
-		
-		// 上傳
-//		SFTP.upload(hostName, port, username, password, localFilePath, "/test4.txt");
-		
-		// 刪除
-//		ETL_SFTP.delete(hostName, port, username, password, "/test4.txt");
-		
-		// 列出所有測試
-//		List<String> fList = listFiles(hostName, Integer.valueOf(port), username, password, "/");
-//		System.out.println("fList size = " + fList.size());
-//		for (int i = 0; i < fList.size(); i++) {
-//			System.out.println(fList.get(i));
-//		}
-		
-		// 確認檔案是否存在
-		boolean isOK = exist(hostName, port, username, password, "/600/UPLOAD/600MASTER.txt");
-		System.out.println(isOK);
-
-	}
-	
 
 	public static ChannelSftp connect(String host, int port, String username, String password) {
 		ChannelSftp sftp = null;
@@ -79,14 +44,14 @@ public class ETL_SFTP {
 			Channel channel = sshSession.openChannel("sftp");
 			channel.connect();
 			sftp = (ChannelSftp) channel;
-			System.out.println("Connected to " + host);
+//			System.out.println("Connected to " + host);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return sftp;
 	}
 	
-	public static List<String> listFiles(String host, int port, String username, String password, String directory) throws SftpException {
+	public static List<String> listFiles(String host, int port, String username, String password, String directory) throws SftpException, JSchException {
 		ChannelSftp sftp = connect(host, port, username, password);
 		List<String> result = new ArrayList<String>();
 		List<ChannelSftp.LsEntry> list = sftp.ls(directory);
@@ -97,6 +62,10 @@ public class ETL_SFTP {
 			}
 		}
 		
+		Session session = sftp.getSession();
+		sftp.disconnect();
+		session.disconnect();
+	
 		return result;
 	}
 	
@@ -240,6 +209,32 @@ public class ETL_SFTP {
 		// result: "sftp://user:123456@domainname.com/resume.pdf
 		return "sftp://" + username + ":" + password + "@" + hostName + ":" + port + "/" + remoteFilePath;
 	}
+	
+	
+	public static void moveFile(String host, String port, String username, String password, String fromDirectory,
+			String toDirectory, List<String> fileNameList) {
+
+		for (String fileName : fileNameList) {
+
+			boolean isSuccess = false;
+
+			isSuccess = download(host, String.valueOf(port), username, password, ETL_SFTP.FILE_TEMP + fileName,
+					fromDirectory + fileName);
+
+			if (isSuccess) {
+				isSuccess = upload(host, String.valueOf(port), username, password, ETL_SFTP.FILE_TEMP + fileName,
+						toDirectory + fileName);
+				if (isSuccess) {
+					delete(host, port, username, password, fromDirectory + fileName);
+				} else {
+					System.out.println("上傳錯誤");
+				}
+			} else {
+				System.out.println("下載錯誤");
+			}
+		}
+
+	}
 
 	private static FileSystemOptions createDefaultOptions() throws FileSystemException {
 		// Create SFTP options
@@ -256,5 +251,5 @@ public class ETL_SFTP {
 
 		return opts;
 	}
-	
+
 }

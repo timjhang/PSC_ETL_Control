@@ -60,8 +60,8 @@ public class ETL_C_New5G {
     	} else {
     		// 測試版本
     		try {
-//    			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Before_Record_Date_Str);
-    			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Record_Date_Str);
+    			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Before_Record_Date_Str);
+//    			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Record_Date_Str);
     		} catch (Exception ex) {
     			ex.printStackTrace();
     			record_date = new Date();

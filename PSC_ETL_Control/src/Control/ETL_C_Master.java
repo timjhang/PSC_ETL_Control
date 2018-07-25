@@ -171,8 +171,13 @@ public class ETL_C_Master {
 		// 執行正常完整, 則寫入
 		if (etlSuccess) {
 			
-			// 執行runstate程式
-			runStateSRC(readyCentralList.get(0));
+			if (isFormal) {
+				// 執行runstate程式
+				runStateSRC(readyCentralList.get(0));
+			} else {
+//				// 執行runstate程式
+//				runStateSRC(readyCentralList.get(0));
+			}
 			
 			if (isFormal) {
 				// 寫入ETL完成紀錄ETL_LOAD_GAML
@@ -201,8 +206,8 @@ public class ETL_C_Master {
 //					ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML失敗!");
 //				}
 				
-//				System.out.println("跳過ETL_LOAD_GAML寫入，因為是全量！");
-				System.out.println("跳過ETL_LOAD_GAML寫入，因為需檢查資料正確性！");
+				System.out.println("跳過ETL_LOAD_GAML寫入，因為是全量！");
+//				System.out.println("跳過ETL_LOAD_GAML寫入，因為需檢查資料正確性！");
 			}
 			
 		}
@@ -374,7 +379,7 @@ public class ETL_C_Master {
 	}
 	
 	// 確認是否有對應Master檔
-	private static boolean checkHasMasterTxt(String central_No) throws Exception {
+	public static boolean checkHasMasterTxt(String central_No) throws Exception {
 		
 		// 組成目標Master檔名
 		String masterFileName = central_No + "MASTER.txt";
@@ -442,7 +447,7 @@ public class ETL_C_Master {
 	}
 	
 	// 解析Master檔內容
-	private static List<String> parseMasterTxtContent(String central_No) throws Exception {
+	public static List<String> parseMasterTxtContent(String central_No) throws Exception {
 		
 		// 結果字串
 		List<String> resultList = new ArrayList<String>();
@@ -879,7 +884,6 @@ public class ETL_C_Master {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-		
 	}
-
+	
 }

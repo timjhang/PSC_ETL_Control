@@ -168,11 +168,6 @@ public class ETL_C_Rerun {
 	    					+ new SimpleDateFormat("yyyy-MM-dd").format(rerunRecordDate) + "發生錯誤！");
 	    		}
 	    		
-//	    		// 取得Rerun批次編號(序號表ETL_PARAMETER_INFO)
-//	    		String batchNo = getRerun_BatchNo();
-//	    		System.out.println("BatchNo = " + batchNo); // for test
-//	    		ETL_P_Log.write_Runtime_Log("ETL_C_Rerun", "BatchNo = " + batchNo);
-	    		
 	    		// 取得 List<資料日期|上傳批號 |zip檔名>
 	    		List<String> zipFiles = new ArrayList<String>();
 	    		zipFiles = parseRerunTxtContent(rerun_Central_No, rerunRecordDate);
@@ -215,17 +210,6 @@ public class ETL_C_Rerun {
 	    		// 指定ETL任務
 				boolean etlSuccess = ETL_C_PROCESS.executeRerun(etlServerList.get(0), batchNo, rerun_Central_No, ptr_upload_no, rerunRecordDate, beforeRecordDate);
 	    		
-				
-				// 流程需要  不再繼續在此處執行 (穩定後可清除)
-//	    		boolean add5GSuccess = false;
-//	    		
-//	    		// 執行暫存Table(load_rerun)併入五代
-//	    		add5GSuccess = ETL_C_Master.addNew5G(batchNo, rerunRecordDate, rerun_Central_No, ptr_upload_no[0], "RERUN");
-//	    		
-//	    		// 執行runstate程式
-//	    		ETL_C_Master.runStateSRC(rerun_Central_No);
-				
-	    		
 	    		// 執行正常完整, 則寫入
 	    		if (etlSuccess) {
 	    			
@@ -263,6 +247,8 @@ public class ETL_C_Rerun {
 		    				System.out.println("寫入ETL_LOAD_GAML失敗!");
 		    				ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML失敗!");
 		    			}
+		    			
+//		    			System.out.println("特殊版本，沒有寫入ETL_LOAD_GAML。");
 		    		}
 	    		}
 	    		

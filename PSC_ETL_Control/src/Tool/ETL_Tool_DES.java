@@ -88,17 +88,30 @@ public class ETL_Tool_DES {
 //			System.out.println(byteArr2HexStr(result));
 //			System.out.println(decrypt(""));
 			
-			System.out.println(encrypt("172.16.16.141"));
-			System.out.println(encrypt("25"));
+//			System.out.println(encrypt("172.16.16.141"));
+//			System.out.println(encrypt("25"));
 //			System.out.println(encrypt("SRC"));
 //			System.out.println(encrypt("SRC"));
 //			System.out.println(encrypt("jdbc:db2://172.18.6.133:50000/GAML"));
 //			System.out.println(encrypt(":currentschema=SRC;currentFunctionPath=SRC;"));
-			System.out.println(ETL_Tool_DES.decrypt("58fcd8a8d6fa0357b43596ad4e09a6c4493ff949a"
-					+ "610bfc777432c83a5696d7645fb4928d65fcffb14ecc533031ffd"
-					+ "1ea810009434c9f055571abf832b087a8c949513758b0ed27dd81b3b4aede62aba"));
+//			System.out.println(ETL_Tool_DES.decrypt("58fcd8a8d6fa0357b43596ad4e09a6c4493ff949a"
+//					+ "610bfc777432c83a5696d7645fb4928d65fcffb14ecc533031ffd"
+//					+ "1ea810009434c9f055571abf832b087a8c949513758b0ed27dd81b3b4aede62aba"));
+//			System.out.println(ETL_Tool_DES.decrypt("210854254ff94eec32f326325a431d9a248f310"
+//					+ "40be3a7193b4f37cefd0fe16ddafed100689a1ac85961605e87949653"));
+			
+//			System.out.println(encrypt("jdbc:db2://172.18.6.151:50000/ETLDB"));
+//			System.out.println(encrypt("jdbc:db2://172.18.6.152:50000/ETLDB"));
+//			System.out.println(encrypt(":currentschema="));
+//			System.out.println(encrypt(";currentFunctionPath="));
+//			System.out.println(encrypt(";"));
+			
 			System.out.println(ETL_Tool_DES.decrypt("210854254ff94eec32f326325a431d9a248f310"
 					+ "40be3a7193b4f37cefd0fe16ddafed100689a1ac85961605e87949653"));
+			
+			System.out.println(encrypt("40"));
+			System.out.println(encrypt("12"));
+			System.out.println(encrypt("C:\\ETL\\DM"));
 			
 		} catch (Exception e) {
 			e.printStackTrace();

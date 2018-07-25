@@ -163,6 +163,7 @@ public class ETL_C_Migration {
 		if (!ETL_C_New5G.clearLoadTable(readyCentralList.get(0).getCentralNo(), "RERUN")) {
 			System.out.println("清除相關Rerun Table 發生錯誤!");
 			ETL_P_Log.write_Runtime_Log("ETL_C_Migration", "清除相關Rerun Table 發生錯誤!");
+			ETL_C_PROCESS.updateNewGenerationMigStatus(mig_record_date, readyCentralList.get(0).getCentralNo(), "Error", "清除相關Rerun Table 發生錯誤!");
 			return;
 		}
 		
@@ -173,6 +174,10 @@ public class ETL_C_Migration {
 		if (!ETL_C_FIVE_G.generateNewGTable(beforeRecordDate, mig_record_date, readyCentralList.get(0).getCentralNo(), "RERUN")) {
 			System.out.println("####ETL_C_Rerun - 建立 " + readyCentralList.get(0).getCentralNo() + " 新一代Rerun Table 資料日期" 
 					+ new SimpleDateFormat("yyyy-MM-dd").format(mig_record_date) + "發生錯誤！");
+			ETL_C_PROCESS.updateNewGenerationMigStatus(mig_record_date, readyCentralList.get(0).getCentralNo(), "Error", 
+				"建立 " + readyCentralList.get(0).getCentralNo() + " 新一代Rerun Table 資料日期" 
+				+ new SimpleDateFormat("yyyy-MM-dd").format(mig_record_date) + "發生錯誤！");
+			return;
 		}
 			
 		// 執行Migration異動
@@ -183,6 +188,8 @@ public class ETL_C_Migration {
 		} else {
 			System.out.println("central_no = " + readyCentralList.get(0).getCentralNo() + " , 資料日期 = " + new SimpleDateFormat("yyyyMMdd").format(mig_record_date) + "  Migration失敗!!");
 			ETL_P_Log.write_Runtime_Log("ETL_C_Migration", 
+					"central_no = " + readyCentralList.get(0).getCentralNo() + " , 資料日期 = " + new SimpleDateFormat("yyyyMMdd").format(mig_record_date) + "  Migration失敗!!");
+			ETL_C_PROCESS.updateNewGenerationMigStatus(mig_record_date, readyCentralList.get(0).getCentralNo(), "Error", 
 					"central_no = " + readyCentralList.get(0).getCentralNo() + " , 資料日期 = " + new SimpleDateFormat("yyyyMMdd").format(mig_record_date) + "  Migration失敗!!");
 			return;
 		}
@@ -234,10 +241,13 @@ public class ETL_C_Migration {
 			
 			// 更新 新5代製作紀錄檔 - Migration  註冊  End
 			ETL_C_PROCESS.updateNewGenerationMigStatus(mig_record_date, readyCentralList.get(0).getCentralNo(), "End", "");
+		} else {
+			ETL_C_PROCESS.updateNewGenerationMigStatus(mig_record_date, readyCentralList.get(0).getCentralNo(), "Error", 
+				"central_no = " + readyCentralList.get(0).getCentralNo() + " , 資料日期 = " + new SimpleDateFormat("yyyyMMdd").format(mig_record_date) + "  Migration後, 正常ETL失敗!!");
 		}
 		
 		// 執行完成更新Flag, 使後續運作正常
-//		123
+//		123  備檔
 		
 		System.out.println("#### ETL_C_Migration End");
 	}
@@ -321,7 +331,7 @@ public class ETL_C_Migration {
 	}
 	
 	// 確認是否有對應Migration Master檔
-	private static boolean checkHasMigrationMasterTxt(String central_No) throws Exception {
+	public static boolean checkHasMigrationMasterTxt(String central_No) throws Exception {
 		
 		// 組成目標Master檔名
 		String masterFileName = "TR_" + central_No + "MASTER.txt";
@@ -340,7 +350,7 @@ public class ETL_C_Migration {
 	}
 	
 	// 解析Migration Master檔內容
-	private static List<String> parseMigrationMasterTxtContent(String central_No) throws Exception {
+	public static List<String> parseMigrationMasterTxtContent(String central_No) throws Exception {
 		
 		// 結果字串
 		List<String> resultList = new ArrayList<String>();

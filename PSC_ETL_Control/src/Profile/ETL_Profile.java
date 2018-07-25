@@ -26,7 +26,6 @@ public class ETL_Profile {
 			ETL_Tool_DES.decrypt("58fcd8a8d6fa0357b43596ad4e09a6c4493ff949a"
 					+ "610bfc777432c83a5696d7645fb4928d65fcffb14ecc533031ffd"
 					+ "1ea810009434c9f055571abf832b087a8c949513758b0ed27dd81b3b4aede62aba");
-//	public final static String db2Url = "jdbc:db2://172.18.21.207:50000/GAMLDB:currentschema=SRC;currentFunctionPath=SRC;";
 
 	public final static String db2User = ETL_Tool_DES.decrypt("0f62db871d1d0101");
 	public final static String db2Password = ETL_Tool_DES.decrypt("44ee592ddae3f0d2c53af1a4a004b34f");
@@ -39,7 +38,6 @@ public class ETL_Profile {
 	public final static String db2UrlGAMLpre = 
 			ETL_Tool_DES.decrypt("58fcd8a8d6fa0357b43596ad4e09a6c4493f"
 					+ "f949a610bfc777432c83a5696d76a4a51f2d50ba1358");
-//	public final static String db2UrlGAMLpre = "jdbc:db2://172.18.21.207:50000/GAML";
 	public final static String db2UrlGAMLafter = 
 			ETL_Tool_DES.decrypt("210854254ff94eec32f326325a431d9a248f310"
 					+ "40be3a7193b4f37cefd0fe16ddafed100689a1ac85961605e87949653");
@@ -122,9 +120,19 @@ public class ETL_Profile {
 	public final static String EMAIL_SERVER_HOST = ETL_Tool_DES.decrypt("4ac3ce9609e110fee69d06fd1ec8c823");
 	public final static int EMAIL_SERVER_PORT = Integer.parseInt(ETL_Tool_DES.decrypt("f8359cb46aebc26d"));
 	public final static String EMAIL_SERVER_ADDRESS ="AML_ETL@agribank.com";
+
+	// ETL Server設定參數
+	public final static String ETL_db2User = ETL_Tool_DES.decrypt("2772602b4cd74bec30a2869c8e5426a6");
+	public final static String ETL_db2Password = ETL_Tool_DES.decrypt("2d8f563ca3253c20c53af1a4a004b34f");
+	public final static String db2ETLTableSchema = ETL_Tool_DES.decrypt("2772602b4cd74bec30a2869c8e5426a6");
+	public final static String db2UrlETLpre1 = ETL_Tool_DES.decrypt("58fcd8a8d6fa0357b43596ad4e09a6c44ab4f8a6772d57e1925e5a9ab1fb66c8e1bc3ec9dd2b26a3");
+	public final static String db2UrlETLpre2 = ETL_Tool_DES.decrypt("58fcd8a8d6fa0357b43596ad4e09a6c46d3311bad199a52e925e5a9ab1fb66c8e1bc3ec9dd2b26a3");
+	public final static String db2UrlETLafter = 
+		ETL_Tool_DES.decrypt("210854254ff94eec0071e43998c89a28") + db2ETLTableSchema +
+		ETL_Tool_DES.decrypt("99997715abeec0bcc2d843c1f1791567e444209833d7b9a6") + db2ETLTableSchema + ETL_Tool_DES.decrypt("1cf4f9def8d8492f");
 	
 	// for test
-	public final static String Before_Record_Date_Str = "20180712";
-	public final static String Record_Date_Str = "20180713";
+	public final static String Before_Record_Date_Str = "20180716";
+	public final static String Record_Date_Str = "20180717";
 	
 }

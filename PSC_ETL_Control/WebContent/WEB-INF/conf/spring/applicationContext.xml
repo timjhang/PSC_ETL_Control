@@ -114,14 +114,35 @@
 		</property>
 	</bean>
 	
+	<!-- MappingDataReceiver 控制程式  -->
+  	<bean id="MappingDataReceiver" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<bean id="Receiver" class="Control.ETL_C_Mapping_Data_Receiver">
+			</bean>
+		</property>
+		<property name="targetMethod">
+			<value>execute</value>
+		</property>
+	</bean>
+	 
+	<bean id="MappingDataTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="MappingDataReceiver" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+	
 	<!-- 批次作業 -->
 	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
 			<list>
-				<ref local="MasterTrigger" /><!-- Master ETL 主排程控制程式 -->
-				<ref local="New5GTrigger" /><!-- Master ETL 建立5代Table控制程式 -->
+				<!-- <ref local="MasterTrigger" />Master ETL 主排程控制程式 -->
+				<!-- <ref local="New5GTrigger" />Master ETL 建立5代Table控制程式 -->
 				<!-- <ref local="RerunTrigger" />Rerun 控制程式 -->
 				<!-- <ref local="MigrationTrigger" />Migration 控制程式 -->
+				<!-- <ref local="MappingDataTrigger" />Migration 對照檔控制程式 -->
 			</list>
 		</property>
 	</bean>

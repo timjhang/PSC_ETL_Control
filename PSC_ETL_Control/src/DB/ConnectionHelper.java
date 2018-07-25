@@ -83,4 +83,25 @@ public class ConnectionHelper {
 		return con;
 	}
 	
+	// 連線DB2資料庫 ETLDB(xxx)
+	public static Connection getETLDB2Connection(String etldbNo) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+		String url = null;
+		Class.forName(Profile.ETL_Profile.db2Driver).newInstance();
+		
+		if ("001".equals(etldbNo)) {
+			url = Profile.ETL_Profile.db2UrlETLpre1 + etldbNo + Profile.ETL_Profile.db2UrlETLafter;
+		} else if ("002".equals(etldbNo)) {
+			url = Profile.ETL_Profile.db2UrlETLpre2 + etldbNo + Profile.ETL_Profile.db2UrlETLafter;
+		}
+
+		String user = Profile.ETL_Profile.ETL_db2User;
+		String password = Profile.ETL_Profile.ETL_db2Password;
+
+		// System.out.println(user + " 連線 " + url + " ...");
+		Connection con = DriverManager.getConnection(url, user, password);
+		con.setAutoCommit(true);
+		// System.out.println(user + " 連線成功!!");
+		return con;
+	}
+	
 }

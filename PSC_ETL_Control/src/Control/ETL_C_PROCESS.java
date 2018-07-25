@@ -350,13 +350,8 @@ public class ETL_C_PROCESS {
 		}
 		
 		try {
-//			// 更新 新5代製作紀錄檔 - Migration Start
-//			updateNewGenerationMigStatus(record_Date, central_no, "Start", "");
-			
 			// 呼叫ETL Server進行initial作業
 			if (!ETL_C_CallWS.call_ETL_Server_initETLserver(etlServerInfo[2])) {
-//					System.out.println("#### ETL_C_PROCESS - executeMigration - call_ETL_Server_initETLserver 發生錯誤！ " + server_no);
-//					return false;
 				throw new Exception("#### ETL_C_PROCESS - executeMigration - call_ETL_Server_initETLserver 發生錯誤！ " + server_no);
 			}
 			
@@ -414,13 +409,6 @@ public class ETL_C_PROCESS {
 			}
 			// 更新 L Master Log
 			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "L", "E", "Y", "");
-			
-			// test  temp
-//			// 執行runstate程式
-//			ETL_C_Master.runStateSRC(central_no);
-			
-//			// 更新 新5代製作紀錄檔 - Migration結束
-//			updateNewGenerationMigStatus(record_Date, central_no, "End", "");
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -516,7 +504,7 @@ public class ETL_C_PROCESS {
 			System.out.println("#### ETL_C_PROCESS fileInfo[1]" + fileInfo[1] + " " + server_no);
 	
 			// 更新報送單位狀態"使用中"
-			updateCentralTime(central_no, record_Date, upload_no, "Start");
+			updateRerunCentralTime(central_no, record_Date, upload_no, "Start");
 			
 			// 寫入E Master Log
 			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "E", etlServerInfo[0])) {
@@ -561,9 +549,6 @@ public class ETL_C_PROCESS {
 			// 更新 新5代製作紀錄檔
 			updateNewGenerationETLStatus(record_Date, central_no, "End", "");
 			
-//			// 更新 新5代製作紀錄檔 - Migration結束
-//			updateNewGenerationMigStatus(record_Date, central_no, "End", "");
-			
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			ETL_P_Log.write_Runtime_Log("executeMigETL", ex.getMessage());
@@ -575,7 +560,7 @@ public class ETL_C_PROCESS {
 		} finally {
 			// 更新報送單位狀態"執行完畢"
 			try {
-				updateCentralTime(central_no, record_Date, upload_no, "End");
+				updateRerunCentralTime(central_no, record_Date, upload_no, "End");
 			} catch (Exception ex) {
 				System.out.println("更新Central:" + central_no + " - 狀態:\"執行完畢\"失敗 " + server_no);
 				ETL_P_Log.write_Runtime_Log("executeMigETL", "更新Central:" + central_no + " - 狀態:\"執行完畢\"失敗 " + server_no);
@@ -1033,8 +1018,9 @@ public class ETL_C_PROCESS {
 			// 匯率檔檢查補漏
 			supplementFX_Rate(logData);
 			
-			// 擔保品, 保證人檔對party進行補漏作業
-			ETL_C_Comm.SupplementParty(logData, fedServer, runTable);
+			// 應時間計劃考量, 先暫緩不發動    test temp
+//			// 擔保品, 保證人檔對party進行補漏作業
+//			ETL_C_Comm.SupplementParty(logData, fedServer, runTable);
 
 		} catch (Exception ex) {
 			System.out.println("call_ETL_Server_Lfunction : 發生錯誤");
