@@ -44,8 +44,10 @@ public class MigrationJar {
 	}
 	
 	private static boolean isStartStatus(Date record_date, String central_no) {
-		int count = ETL_DM_MIGRATION_DAO.get_Migration_Status_Count(record_date, central_no, "START");
-
+		int count_temp = 0, count = 0;
+		count = ETL_DM_MIGRATION_DAO.get_Migration_Status_Count(record_date, central_no, "Start");
+		count_temp = ETL_DM_MIGRATION_DAO.get_Migration_Status_Count(record_date, central_no, "READY");
+		count = count + count_temp;
 		if (count != 0) {
 			return true;
 		} else {
@@ -95,16 +97,16 @@ public class MigrationJar {
 				return false;
 			}
 
-			if (!ETL_C_Master.checkHasMasterTxt(central_no)) {
-				System.out.println("狀態錯誤:日常異動檔資料未上傳");
-				return false;
-			}
+//			if (!ETL_C_Master.checkHasMasterTxt(central_no)) {
+//				System.out.println("狀態錯誤:日常異動檔資料未上傳");
+//				return false;
+//			}
 			
 			
-			//日常異動檔Master txt內容 檢查
-			if(!checkMasterTxtContent( central_no, record_date_str)) {
-				return false;
-			}
+//			//日常異動檔Master txt內容 檢查
+//			if(!checkMasterTxtContent( central_no, record_date_str)) {
+//				return false;
+//			}
 			
 			
 			//合併單位異動檔Master txt內容 檢查

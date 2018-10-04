@@ -30,6 +30,17 @@ public class ETL_DM_L {
 
 	}
 	
+	// 觸發DB2載入Procedure, 資料載入IDMAPPING_LOAD
+	public static void trans_to_IDMAPPING_LOAD(ETL_Bean_LogData logData, String fedServer, String runTable) {
+
+		System.out.println("#######Load - ETL_L_IDMAPPING - Start");
+
+		ETL_DM_MIGRATION_DAO.trans_to_IDMAPPING_LOAD( logData,  fedServer,  runTable);
+
+		System.out.println("#######Load - ETL_L_IDMAPPING - End");
+
+	}
+	
 	public static void main(String args[]) throws ParseException {
 		String batch_No = "DMTEST9";
 		String exc_central_no = "600";

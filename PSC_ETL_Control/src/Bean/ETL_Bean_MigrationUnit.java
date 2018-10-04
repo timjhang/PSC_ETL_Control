@@ -8,6 +8,8 @@ public class ETL_Bean_MigrationUnit {
 	String centralNo;
 	// 資料日期
 	Date recordDate;
+	// 批次編號
+	String batchNo;
 	
 	public String getCentralNo() {
 		return centralNo;
@@ -23,6 +25,14 @@ public class ETL_Bean_MigrationUnit {
 	
 	public void setRecordDate(Date recordDate) {
 		this.recordDate = recordDate;
+	}
+
+	public String getBatchNo() {
+		return batchNo;
+	}
+
+	public void setBatchNo(String batchNo) {
+		this.batchNo = batchNo;
 	}
 
 }

@@ -2,7 +2,7 @@ package Migration;
 
 import Bean.ETL_Bean_DM_LogData;
 
-public abstract class Migration  implements Runnable {
+public abstract class Migration implements Runnable {
 	
 	ETL_Bean_DM_LogData logData;
 

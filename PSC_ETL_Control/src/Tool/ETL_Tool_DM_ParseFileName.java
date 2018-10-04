@@ -64,7 +64,7 @@ public class ETL_Tool_DM_ParseFileName {
 			throw new Exception("ETL_Tool_DM_ParseFileName 建立檔名有誤!!\n檔名日期格式錯誤");
 		}
 	
-		if(!"BRANCHMAPPING".equals(file_name)&&!"ACCTMAPPING".equals(file_name)) {
+		if(!"BRANCHMAPPING".equals(file_name)&&!"ACCTMAPPING".equals(file_name)&&!"IDMAPPING".equals(file_name)) {
 			throw new Exception("ETL_Tool_DM_ParseFileName 建立檔名有誤!!\n");
 		}
 		
@@ -119,11 +119,21 @@ public class ETL_Tool_DM_ParseFileName {
 		this.record_date_str = record_date_str;
 	}
 	
-	public static  void main(String [] args) throws Exception {
-		ETL_Tool_DM_ParseFileName obj = new ETL_Tool_DM_ParseFileName("TR_600_BRANCHMAPPING_20180510.txt");
-		
-		System.out.println(obj.getFile_name());
-		System.out.println(obj.getFileName());
-	
-	}
+//	public static  void main(String [] args) throws Exception {
+//		ETL_Tool_DM_ParseFileName obj = new ETL_Tool_DM_ParseFileName("TR_600_BRANCHMAPPING_20180510.txt");
+//		
+//		System.out.println(obj.getFile_name());
+//		System.out.println(obj.getFileName());
+//		
+//		obj = new ETL_Tool_DM_ParseFileName("TR_600_IDMAPPING_20180510.txt");
+//		
+//		System.out.println(obj.getFile_name());
+//		System.out.println(obj.getFileName());
+//		
+//		obj = new ETL_Tool_DM_ParseFileName("TR_600_ACCTMAPPING_20180510.txt");
+//		
+//		System.out.println(obj.getFile_name());
+//		System.out.println(obj.getFileName());
+//	
+//	}
 }

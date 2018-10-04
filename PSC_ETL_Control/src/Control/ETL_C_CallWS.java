@@ -65,8 +65,16 @@ public class ETL_C_CallWS {
 						
 					} else if ("FAILURE".equals(msgText)) {
 						
-						// Web Servie功能正常啟動, 確認參數錯誤
-						System.out.println("ETL Server testInput參數請使用 \"check\"");
+						Element errorMsg = root.element("errorMsg");
+						
+						if (errorMsg != null) {
+							String errorMsgText = errorMsg.getTextTrim();
+							System.out.println(errorMsgText);
+						}
+						
+//						// Web Servie功能正常啟動, 確認參數錯誤
+//						System.out.println("ETL Server testInput參數請使用 \"check\"");
+						
 						exeReault = false;
 						
 					};
@@ -850,6 +858,76 @@ public class ETL_C_CallWS {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	// 呼叫關聯性檢查程式
+	public static boolean call_Relevance(String ip_port, String batch_No, String exc_central_no, String record_DateStr) {
+		
+		try {
+			
+//			URL url = new URL("http://172.18.6.151:8080/AML_ETL/rest/relevance/WS1?BatchNo=ETL00001&CentralNo=600&RecodeDate=2018-09-07");
+			System.out.println("確認ETL Server Web Service功能: " + ip_port);
+			String urlStr = "http://" + ip_port + "/AML_ETL/rest/relevance/WS1?";
+			
+			urlStr = urlStr + "BatchNo=" + batch_No + "&CentralNo=" + exc_central_no + "&RecodeDate=" + record_DateStr;
+			
+			System.out.println("urlStr = " + urlStr);
+			URL url = new URL(urlStr);
+			
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+			conn.setRequestProperty("Accept", "application/xml");
+			
+			if (conn.getResponseCode() != 200) {
+				throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
+			}
+			
+			BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+			
+			boolean exeReault = false;
+			
+			String outputStr; // WebService輸出字串  XML格式
+			while ((outputStr = br.readLine()) != null) {
+				InputStream is = new ByteArrayInputStream(outputStr.getBytes("UTF-8"));
+				SAXReader reader = new SAXReader();
+				Document document = reader.read(is);
+				Element root = document.getRootElement();
+				
+				Element msg = root.element("msg");
+				if (msg != null) {
+					String msgText = msg.getTextTrim();
+					System.out.println("msg = " + msgText);
+					
+					if ("SUCCESS".equals(msgText)) {
+						
+						// Web Servie功能正常啟動, 可呼叫
+						exeReault = true;
+						
+					} else if ("FAILURE".equals(msgText)) {
+						
+						// 若出現錯誤, 拋出錯誤訊息Error Message
+						Element errorMsg = root.element("errorMsg");
+						String errorMsgStr = "tag \"errorMsg\" is null";
+						if (errorMsgStr != null) {
+							errorMsgStr = errorMsg.getTextTrim();
+						}
+						throw new Exception(errorMsgStr);
+					};
+					
+				} else {
+					throw new Exception("root has no element names msg");
+				}
+			}
+			
+			return exeReault;
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			System.out.println("呼叫Web Service Relevance出現錯誤: " + ip_port);
+			
+			return false;
+		}
+		
 	}
 
 }

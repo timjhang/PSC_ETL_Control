@@ -18,7 +18,7 @@ import Profile.ETL_Profile;
 public class ETL_C_New5G {
 	
 	// 是否為正式參數
-	private static boolean isFormal = false;
+	private static boolean isFormal = true;
 
 	public static void execute() {
 		
@@ -72,8 +72,8 @@ public class ETL_C_New5G {
 		List<String> central_list;
 		Date[] nextRecordDateAry = new Date[2];
 		central_list = getNeedNewG_LoadTemp_Central(record_date, nextRecordDateAry);
-		Date beforeRecordDate = nextRecordDateAry[0]; // 包含今天最晚的資料日期
-		Date nextRecordDate = nextRecordDateAry[1]; // 今天之後最早的資料日期
+		Date beforeRecordDate = nextRecordDateAry[0]; // 包含record_date最晚的資料日期
+		Date nextRecordDate = nextRecordDateAry[1]; // record_date之後最早的資料日期
 		
 		if (beforeRecordDate == null || nextRecordDate == null) {
 			
@@ -109,7 +109,7 @@ public class ETL_C_New5G {
 	}
 	
 	// 取得須建立load_temp table 中心
-	private static List<String> getNeedNewG_LoadTemp_Central(Date record_date, Date[] nextRecordDate) {
+	public static List<String> getNeedNewG_LoadTemp_Central(Date record_date, Date[] nextRecordDate) {
 		List<String> resultList = new ArrayList<String>();
 		
 		try {

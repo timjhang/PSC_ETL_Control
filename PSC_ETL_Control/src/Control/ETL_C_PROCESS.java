@@ -22,6 +22,9 @@ import Tool.ETL_Tool_StringX;
 
 public class ETL_C_PROCESS {
 	
+	// 是否為正式參數
+	private static boolean isFormal = true;
+	
 	// 執行ETL
 	public static boolean executeETL(String[] etlServerInfo, String batch_No, String central_no, String[] ptr_upload_no, Date record_Date, Date before_record_date) {
 		
@@ -547,7 +550,8 @@ public class ETL_C_PROCESS {
 			
 			
 			// 更新 新5代製作紀錄檔
-			updateNewGenerationETLStatus(record_Date, central_no, "End", "");
+//			updateNewGenerationETLStatus(record_Date, central_no, "End", "");
+			updateNewGenerationETLStatus(record_Date, central_no, "Mid", "");
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -1018,9 +1022,8 @@ public class ETL_C_PROCESS {
 			// 匯率檔檢查補漏
 			supplementFX_Rate(logData);
 			
-			// 應時間計劃考量, 先暫緩不發動    test temp
-//			// 擔保品, 保證人檔對party進行補漏作業
-//			ETL_C_Comm.SupplementParty(logData, fedServer, runTable);
+			// 擔保品, 保證人檔對party進行補漏作業
+			ETL_C_Comm.SupplementParty(logData, fedServer, runTable);
 
 		} catch (Exception ex) {
 			System.out.println("call_ETL_Server_Lfunction : 發生錯誤");
@@ -1035,7 +1038,7 @@ public class ETL_C_PROCESS {
 	}
 	
 	// 更新5代Table 記錄檔  prepare status
-	private static boolean updateNewGenerationETLStatus(Date record_date, String central_no, String etlStatus, String discription) {
+	public static boolean updateNewGenerationETLStatus(Date record_date, String central_no, String etlStatus, String discription) {
 		
 		try {
 			
@@ -1244,8 +1247,15 @@ public class ETL_C_PROCESS {
 			// 欲drop資料日期
 			Date dropDate = null;
 			
+			int Gcount = 5;
+			if (isFormal) {
+				Gcount = 5;
+			} else {
+				Gcount = 10;
+			}
+			
 //			if (Integer.valueOf(partition_Info[0]) >= 6) { // for test
-			if (Integer.valueOf(partition_Info[0]) >= 5) {
+			if (Integer.valueOf(partition_Info[0]) >= Gcount) {
 				dropDate = ETL_Tool_StringX.toUtilDate(partition_Info[1]);
 			}
 			

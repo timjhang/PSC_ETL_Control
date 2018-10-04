@@ -45,7 +45,7 @@ public class ETL_Tool_FileName_Encrypt {
 	public static void main(String[] args) {
 		//AML_951_20180116_001.zip
 		try {
-			System.out.println(ETL_Tool_FileName_Encrypt.encode("AML_TR_600_20180608002.zip"));
+			System.out.println(ETL_Tool_FileName_Encrypt.encode("AML_018_20180409001.zip"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

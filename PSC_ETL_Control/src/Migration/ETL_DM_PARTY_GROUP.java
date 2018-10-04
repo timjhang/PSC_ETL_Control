@@ -10,21 +10,21 @@ import DB.ConnectionHelper;
 import Profile.ETL_Profile;
 import Tool.ETL_Tool_CastObjUtil;
 
-public class ETL_DM_LOAN_TR extends Migration {
-	public ETL_DM_LOAN_TR() {
+public class ETL_DM_PARTY_GROUP extends Migration {
+	public ETL_DM_PARTY_GROUP() {
 	}
 
-	public ETL_DM_LOAN_TR(ETL_Bean_DM_LogData logData) {
+	public ETL_DM_PARTY_GROUP(ETL_Bean_DM_LogData logData) {
 		super(logData);
 	}
 
 	@Override
 	public void migration_File() {
-		System.out.println("#######Migration - ETL_DM_LOAN_TR - Start");
+		System.out.println("#######Migration - ETL_DM_PARTY_GROUP - Start");
 		Connection con = null;
 		CallableStatement cstmt = null;
 		try {
-			String sql = "{call " + ETL_Profile.db2TableSchema + ".Migration.ETL_DM_LOAN_TR(?,?,?)}";
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Migration.ETL_DM_PARTY_GROUP(?,?,?)}";
 			con = ConnectionHelper.getDB2Connection(logData.getCentral_no());
 			cstmt = con.prepareCall(sql);
 			Struct dataStruct = con.createStruct("T_ETL_FILE_LOG", ETL_Tool_CastObjUtil.castObjectArr(logData));
@@ -39,7 +39,7 @@ public class ETL_DM_LOAN_TR extends Migration {
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
-		} finally {
+		}finally {
 			try {
 				// 資源後開,先關
 				if (cstmt != null) {
@@ -49,10 +49,11 @@ public class ETL_DM_LOAN_TR extends Migration {
 					con.close();
 				}
 			} catch (SQLException e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
 		} 
-		System.out.println("#######Migration - ETL_DM_LOAN_TR - End");
+		System.out.println("#######Migration - ETL_DM_PARTY_GROUP - End");
 	}
 }

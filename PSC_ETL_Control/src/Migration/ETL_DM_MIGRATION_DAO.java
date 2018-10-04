@@ -8,6 +8,7 @@ import java.sql.Types;
 import java.util.Date;
 
 import Bean.ETL_Bean_LogData;
+import Bean.ETL_Bean_Response;
 import DB.ConnectionHelper;
 import DB.ETL_P_Log;
 import Profile.ETL_Profile;
@@ -53,6 +54,67 @@ public class ETL_DM_MIGRATION_DAO {
 			ex.printStackTrace();
 			ETL_P_Log.write_Runtime_Log("DM", ex.getMessage());
 			return 0;
+		} finally {
+			try {
+				// 資源後開,先關
+				if (cstmt != null) {
+					cstmt.close();
+				}
+				if (con != null) {
+					con.close();
+				}
+
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
+	}
+	
+	// 取得Migration_Status
+	public static ETL_Bean_Response get_Migration_Status(Date record_date, String central_no) {
+		Connection con = null;
+		CallableStatement cstmt = null;
+		String status = null;
+		ETL_Bean_Response res = new ETL_Bean_Response();
+
+		try {
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".DM.get_Migration_Status(?,?,?,?,?)}";
+
+			con = ConnectionHelper.getDB2Connection();
+			cstmt = con.prepareCall(sql);
+
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setDate(2, new java.sql.Date(record_date.getTime()));
+			cstmt.setString(3, central_no);
+			cstmt.registerOutParameter(4, Types.VARCHAR);
+			cstmt.registerOutParameter(5, Types.VARCHAR);
+
+			cstmt.execute();
+
+			int returnCode = cstmt.getInt(1);
+
+			// 有錯誤釋出錯誤訊息 回傳0
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(5);
+				System.out.println("####DM - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+				ETL_P_Log.write_Runtime_Log("DM", "####get_Migration_Status_Count: - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+				
+				res.setError("####get_Migration_Status - Error Code = " + returnCode + ", Error Message : " + errorMessage);
+				
+				return res;
+			}
+
+			status = cstmt.getString(4);
+			res.setSuccessObj(status);
+
+			return res;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			ETL_P_Log.write_Runtime_Log("DM", ex.getMessage());
+			res.setError(ex.getMessage());
+			return res;
 		} finally {
 			try {
 				// 資源後開,先關
@@ -149,6 +211,56 @@ public class ETL_DM_MIGRATION_DAO {
 				String errorMessage = cstmt.getString(5);
 				System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
 				ETL_P_Log.write_Runtime_Log("DM", " trans_to_ACCTMAPPING_LOAD : Error Code = " + returnCode + ", Error Message : " + errorMessage);
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		} finally {
+			try {
+				// 資源後開,先關
+				if (cstmt != null) {
+					cstmt.close();
+				}
+				if (con != null) {
+					con.close();
+				}
+
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
+
+	}
+	
+	// 觸發DB2載入Procedure, 資料載入IDMAPPING_LOAD
+	public static void trans_to_IDMAPPING_LOAD(ETL_Bean_LogData logData, String fedServer, String runTable) {
+		Connection con = null;
+		CallableStatement cstmt = null;
+		try {
+
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".DM.loadETL_IDMAPPING(?,?,?,?,?)}";
+
+			con = ConnectionHelper.getDB2Connection(logData.getCENTRAL_NO().trim());
+			cstmt = con.prepareCall(sql);
+
+			Struct dataStruct = con.createStruct("T_LOGDATA", ETL_Tool_CastObjUtil.castObjectArr(logData));
+
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setObject(2, dataStruct);
+			cstmt.setString(3, fedServer);
+			cstmt.setString(4, runTable);
+			cstmt.registerOutParameter(5, Types.VARCHAR);
+
+			cstmt.execute();
+
+			int returnCode = cstmt.getInt(1);
+
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(5);
+				System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+				ETL_P_Log.write_Runtime_Log("DM", " trans_to_IDMAPPING_LOAD : Error Code = " + returnCode + ", Error Message : " + errorMessage);
 			}
 
 		} catch (Exception ex) {
@@ -388,15 +500,14 @@ public class ETL_DM_MIGRATION_DAO {
 
 		return result;
 	}
-
 	// 取得trans_CentralCodePool
-	public static boolean trans_CentralCodePool(Date record_date, String fed) {
+	public static boolean trans_CentralCodePool(Date record_date, String fed,String central_no, String  batch_No) {
 		boolean isSuccess = false;
 		Connection con = null;
 		CallableStatement cstmt = null;
 
 		try {
-			String sql = "{call " + ETL_Profile.db2TableSchema + ".DM.trans_CentralCodePool(?,?,?,?)}";
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".DM.trans_CentralCodePool(?,?,?,?,?,?)}";
 
 			con = ConnectionHelper.getDB2Connection();
 			cstmt = con.prepareCall(sql);
@@ -404,7 +515,9 @@ public class ETL_DM_MIGRATION_DAO {
 			cstmt.registerOutParameter(1, Types.INTEGER);
 			cstmt.setDate(2, new java.sql.Date(record_date.getTime()));
 			cstmt.setString(3, fed);
-			cstmt.registerOutParameter(4, Types.VARCHAR);
+			cstmt.setString(4, batch_No);
+			cstmt.setString(5, central_no);
+			cstmt.registerOutParameter(6, Types.VARCHAR);
 
 			cstmt.execute();
 
@@ -412,7 +525,7 @@ public class ETL_DM_MIGRATION_DAO {
 
 			// 有錯誤釋出錯誤訊息 不往下繼續進行
 			if (returnCode != 0) {
-				String errorMessage = cstmt.getString(4);
+				String errorMessage = cstmt.getString(6);
 				System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
 				ETL_P_Log.write_Runtime_Log("trans_CentralCodePool", "Error Code = " + returnCode + ", Error Message : " + errorMessage);
 				isSuccess = false;
@@ -480,7 +593,15 @@ public class ETL_DM_MIGRATION_DAO {
 	}
 
 	public static void main(String[] args) throws Exception {
-		ETL_DM_MIGRATION_DAO.trans_CentralCodePool(ETL_Tool_StringX.toUtilDate("20180608"), "GAML600");
+		
+		System.out.println("start");
+		ETL_Bean_Response res = ETL_DM_MIGRATION_DAO.get_Migration_Status(ETL_Tool_StringX.toUtilDate("20180817"), "600");
+
+//		ETL_Bean_Response res = new ETL_Bean_Response();
+//		res.setSuccessObj(null);
+		
+		System.out.println(res.getObj());
+		
 	}
 
 }

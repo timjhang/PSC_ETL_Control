@@ -122,9 +122,9 @@ public class ETL_Profile {
 	public final static String EMAIL_SERVER_ADDRESS ="AML_ETL@agribank.com";
 
 	// ETL Server設定參數
-	public final static String ETL_db2User = ETL_Tool_DES.decrypt("2772602b4cd74bec30a2869c8e5426a6");
-	public final static String ETL_db2Password = ETL_Tool_DES.decrypt("2d8f563ca3253c20c53af1a4a004b34f");
-	public final static String db2ETLTableSchema = ETL_Tool_DES.decrypt("2772602b4cd74bec30a2869c8e5426a6");
+	public final static String ETL_db2User = ETL_Tool_DES.decrypt("5f2cea8f9a0ec7d4");
+	public final static String ETL_db2Password = ETL_Tool_DES.decrypt("75389c596a389dcfc53af1a4a004b34f");
+	public final static String db2ETLTableSchema = ETL_Tool_DES.decrypt("5f2cea8f9a0ec7d4");
 	public final static String db2UrlETLpre1 = ETL_Tool_DES.decrypt("58fcd8a8d6fa0357b43596ad4e09a6c44ab4f8a6772d57e1925e5a9ab1fb66c8e1bc3ec9dd2b26a3");
 	public final static String db2UrlETLpre2 = ETL_Tool_DES.decrypt("58fcd8a8d6fa0357b43596ad4e09a6c46d3311bad199a52e925e5a9ab1fb66c8e1bc3ec9dd2b26a3");
 	public final static String db2UrlETLafter = 
@@ -132,7 +132,7 @@ public class ETL_Profile {
 		ETL_Tool_DES.decrypt("99997715abeec0bcc2d843c1f1791567e444209833d7b9a6") + db2ETLTableSchema + ETL_Tool_DES.decrypt("1cf4f9def8d8492f");
 	
 	// for test
-	public final static String Before_Record_Date_Str = "20180716";
-	public final static String Record_Date_Str = "20180717";
+	public final static String Before_Record_Date_Str = "20180802";
+	public final static String Record_Date_Str = "20180803";
 	
 }

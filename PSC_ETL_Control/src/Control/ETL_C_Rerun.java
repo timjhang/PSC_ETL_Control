@@ -17,14 +17,16 @@ import com.ibm.db2.jcc.DB2Types;
 
 import DB.ConnectionHelper;
 import DB.ETL_P_Log;
+import DB.ETL_P_RunState;
 import FTP.ETL_SFTP;
 import Profile.ETL_Profile;
 import Tool.ETL_Tool_FormatCheck;
+import Tool.ETL_Tool_Mail;
 
 public class ETL_C_Rerun {
 	
 	// 是否為正式參數
-	private static boolean isFormal = false;
+	private static boolean isFormal = true;
 	
 	public static void execute() {
 		
@@ -146,7 +148,7 @@ public class ETL_C_Rerun {
 	    			continue;
 	    		}
 	    		
-	    		Date beforeRecordDate = new Date();
+	    		Date beforeRecordDate;
 	    		try {
 	    			beforeRecordDate = ETL_C_Master.getBeforeRecordDate(rerunRecordDate);
 	    		} catch (Exception ex) {
@@ -215,10 +217,10 @@ public class ETL_C_Rerun {
 	    			
 	    			if (isFormal) {
 	    				// 執行runstate程式
-			    		ETL_C_Master.runStateSRC(rerun_Central_No);
+	    				ETL_P_RunState.runStateStart(rerun_Central_No);
 	    			} else {
 	    				// 執行runstate程式
-			    		ETL_C_Master.runStateSRC(rerun_Central_No);
+	    				ETL_P_RunState.runStateStart(rerun_Central_No);
 	    			}
 	    			
 		    		if (isFormal) {
@@ -230,9 +232,21 @@ public class ETL_C_Rerun {
 		    			if (isSuccess) {
 		    				System.out.println("寫入ETL_LOAD_GAML成功!");
 		    				ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML成功!");
+		    				
+		    				// 寫入執行成功信件
+							String mailContent = 
+									"單位：" + rerun_Central_No + "  資料日期：" + new SimpleDateFormat("yyyyMMdd").format(rerunRecordDate) +
+									"  AML_ETL執行重跑完畢。";
+							ETL_Tool_Mail.writeAML_Mail(rerun_Central_No, "SYSAdmin", null, "AML_ETL 系統通知", mailContent);
 		    			} else {
 		    				System.out.println("寫入ETL_LOAD_GAML失敗!");
 		    				ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML失敗!");
+		    				
+		    				// 寫入信件
+							String mailContent = 
+									"單位：" + rerun_Central_No + "  資料日期：" + new SimpleDateFormat("yyyyMMdd").format(rerunRecordDate) +
+									"  AML_ETL執行重跑啟動CDD/TMS失敗，請洽IT人員。";
+							ETL_Tool_Mail.writeAML_Mail(rerun_Central_No, "SYSAdmin", null, "AML_ETL 系統通知", mailContent);
 		    			}
 		    		} else {
 		    			// 寫入ETL完成紀錄ETL_LOAD_GAML
@@ -250,11 +264,25 @@ public class ETL_C_Rerun {
 		    			
 //		    			System.out.println("特殊版本，沒有寫入ETL_LOAD_GAML。");
 		    		}
+	    		} else {
+	    			// 寫入執行失敗信件
+					String mailContent = 
+							"單位：" + rerun_Central_No + "  資料日期：" + new SimpleDateFormat("yyyyMMdd").format(rerunRecordDate) +
+							"  AML_ETL執行中出現錯誤，請洽IT人員協助調查/處理。";
+					ETL_Tool_Mail.writeAML_Mail(rerun_Central_No, "SYSAdmin", null, "AML_ETL 系統通知", mailContent);
 	    		}
 	    		
 	    		// 跑完的時候關閉對應的Flag
 	    		updateRerunStatus(rerun_Central_No, rerunRecordDate, "");
 	    		
+	    		// 若Rerun 資料日期為昨天以前最晚營業日, 則更新5代紀錄Table 讓備檔自動進行
+	    		Date yesterdayRecordDate = ETL_C_Master.getBeforeRecordDate(new Date());
+	    		System.out.println("yesterdayRecordDate = " + new SimpleDateFormat("yyyyMMdd").format(yesterdayRecordDate));
+	    		if (rerunRecordDate.equals(yesterdayRecordDate)) {
+	    			Date nextRecordDate = getNextRecordDate(yesterdayRecordDate);
+	    			System.out.println("更新" + rerun_Central_No + " "+ new SimpleDateFormat("yyyyMMdd").format(nextRecordDate) + " 備檔紀錄");
+	    			ETL_C_FIVE_G.updateNewGenerationPrepareStatus(nextRecordDate, rerun_Central_No, null, "");
+	    		}
 	    	}
     	
     	} catch (Exception ex) {
@@ -584,6 +612,42 @@ public class ETL_C_Rerun {
 			ex.printStackTrace();
 			ETL_P_Log.write_Runtime_Log("write_ETL_LOAD_GAML", ex.getMessage());
 			return false;
+		}
+	}
+	
+	// 查詢下一個資料日期
+	public static Date getNextRecordDate(Date recordDate) throws Exception {
+		
+		try {
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.getNext_RecordDate(?,?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection();
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setDate(2, new java.sql.Date(recordDate.getTime()));
+			cstmt.registerOutParameter(3, Types.DATE);
+			cstmt.registerOutParameter(4, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(4);
+//			        System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+			}
+			
+			return new java.util.Date(cstmt.getDate(3).getTime());
+			
+//			    System.out.println("List Size = " + resultList.size()); // for test
+		
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new Exception("無法取得下一代資料日期!");
 		}
 	}
 	

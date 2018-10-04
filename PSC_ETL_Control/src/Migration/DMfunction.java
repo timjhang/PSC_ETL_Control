@@ -11,7 +11,109 @@ import Bean.ETL_Bean_DM_LogData;
 
 public class DMfunction {
 	
-	public static void callDMfunctionETL(ETL_Bean_DM_LogData logData) {
+//	// 執行SRC Loan Domain Migration程式
+//	public static void callDMfuncionLOAN(ETL_Bean_DM_LogData logData) {
+//		try {
+//		
+//			// clone 新class指標用
+//			ETL_Bean_DM_LogData logData2 = logData.clone();
+//			new ETL_DM_LOAN_TR(logData2).migration_File();
+//			
+//		} catch (Exception ex) {
+//			System.out.println("執行ETL_DM_LOAN_TR發生錯誤:" + ex.getMessage());
+//		}
+//		
+//	}
+	
+	// 執行DMfunction 中的TR_Mapping落第
+	public static void callDMfuncionTR_MAPPING(ETL_Bean_DM_LogData logData) {
+		try {
+		
+			// clone 新class指標用
+			ETL_Bean_DM_LogData logData2 = logData.clone();
+			new ETL_DM_TR_MAPPING(logData2).migration_File();
+			
+		} catch (Exception ex) {
+			System.out.println("執行ETL_DM_TR_MAPPING發生錯誤:" + ex.getMessage());
+		}
+		
+	}
+	
+	// 執行DMfunction 中的KYCS記錄檔
+	public static void callDMfuncionKYCS(ETL_Bean_DM_LogData logData) {
+		try {
+		
+			// clone 新class指標用
+			ETL_Bean_DM_LogData logData2 = logData.clone();
+			new ETL_DM_KYCS(logData2).migration_File();
+			
+		} catch (Exception ex) {
+			System.out.println("執行ETL_DM_KYCS發生錯誤:" + ex.getMessage());
+		}
+		
+	}
+	
+//	// 執行SRC Domain Migration程式
+//	public static void callDMfunctionETL(ETL_Bean_DM_LogData logData) {
+//		// clone 新class指標用
+//		ETL_Bean_DM_LogData logData2;
+//
+//		List<Migration> migrations = new ArrayList<Migration>();
+//
+//		String stepStr = "";
+//
+//		System.out.println("#### DMfunctionETL Start " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+//
+//		try {
+//
+//			// 執行6支DM系列程式
+//			logData2 = logData.clone();
+//			migrations.add(new ETL_DM_PARTY_RISK_RANK_TR(logData2));
+//
+//			logData2 = logData.clone();
+//			migrations.add(new ETL_DM_FEEDBACK_TR(logData2));
+//
+//			logData2 = logData.clone();
+//			migrations.add(new ETL_DM_INDICATION_TR(logData2));
+//
+//			logData2 = logData.clone();
+//			migrations.add(new ETL_DM_TRANSACTION_TR(logData2));
+//
+//			logData2 = logData.clone();
+//			migrations.add(new ETL_DM_TRANSFER_TR(logData2));
+//
+//			logData2 = logData.clone();
+//			migrations.add(new ETL_DM_SERVICE_TR(logData2));
+//
+////			logData2 = logData.clone();
+////			migrations.add(new ETL_DM_LOAN_TR(logData2));
+//
+//			stepStr = "DM多線程";
+//			ExecutorService executor = Executors.newFixedThreadPool(3);
+//
+//			for (Migration migration : migrations) {
+//				executor.execute(migration);
+//			}
+//
+//			executor.shutdown();
+//
+//			while (!executor.isTerminated()) {
+//			}
+//
+//			System.out.println("線程池已經關閉");
+//			
+//		} catch (Exception ex) {
+//			ex.printStackTrace();
+//			System.out.println("執行" + stepStr + "發生錯誤:" + ex.getMessage());
+//		}
+//
+//		System.out.println("#### DMfunctionETL End " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+//	}
+	
+	// 執行CMT Domain Migration程式
+//	public static void callDMfunctionCMT(ETL_Bean_DM_LogData logData) {
+	public static void callDMfunctionDomain(ETL_Bean_DM_LogData logData) {
+
 		// clone 新class指標用
 		ETL_Bean_DM_LogData logData2;
 
@@ -19,11 +121,17 @@ public class DMfunction {
 
 		String stepStr = "";
 
-		System.out.println("#### DMfunctionETL Start " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+//		System.out.println("#### DMfunctionCMT Start " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+		System.out.println("#### DMfunctionDomain Start " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
 
 		try {
 
-			// 執行7支DM系列程式
+			// 執行1 + 6 + 38 支DM系列程式
+			logData2 = logData.clone();
+			migrations.add(new ETL_DM_LOAN_TR(logData2));
+			
+			////
+			
 			logData2 = logData.clone();
 			migrations.add(new ETL_DM_PARTY_RISK_RANK_TR(logData2));
 
@@ -41,46 +149,9 @@ public class DMfunction {
 
 			logData2 = logData.clone();
 			migrations.add(new ETL_DM_SERVICE_TR(logData2));
-
-			logData2 = logData.clone();
-			migrations.add(new ETL_DM_LOAN_TR(logData2));
-
-			stepStr = "DM多線程";
-			ExecutorService executor = Executors.newFixedThreadPool(3);
-
-			for (Migration migration : migrations) {
-				executor.execute(migration);
-			}
-
-			executor.shutdown();
-
-			while (!executor.isTerminated()) {
-			}
-
-			System.out.println("線程池已經關閉");
 			
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			System.out.println("執行" + stepStr + "發生錯誤:" + ex.getMessage());
-		}
-
-		System.out.println("#### DMfunctionETL End " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
-	}
-	
-	public static void callDMfunctionCMT(ETL_Bean_DM_LogData logData) {
-
-		// clone 新class指標用
-		ETL_Bean_DM_LogData logData2;
-
-		List<Migration> migrations = new ArrayList<Migration>();
-
-		String stepStr = "";
-
-		System.out.println("#### DMfunctionCMT Start " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
-
-		try {
-
-			// 執行35 + 1支DM系列程式
+			////
+			
 			logData2 = logData.clone();
 			migrations.add(new ETL_DM_DOMAIN_CENTER_MAPPING(logData2));
 
@@ -108,8 +179,8 @@ public class DMfunction {
 			logData2 = logData.clone();
 			migrations.add(new ETL_DM_QUESTION_TEMPLATE(logData2));
 
-			logData2 = logData.clone();
-			migrations.add(new ETL_DM_KYCS(logData2));
+//			logData2 = logData.clone();
+//			migrations.add(new ETL_DM_KYCS(logData2));
 
 			logData2 = logData.clone();
 			migrations.add(new ETL_DM_KYC_SENIOR_OFFICER_INFO(logData2));
@@ -185,6 +256,18 @@ public class DMfunction {
 
 			logData2 = logData.clone();
 			migrations.add(new ETL_DM_KYC_ACCOUNT(logData2));
+			
+			logData2 = logData.clone();
+			migrations.add(new ETL_DM_PARTY_GROUP(logData2));
+			
+			logData2 = logData.clone();
+			migrations.add(new ETL_DM_PARTY_GROUP_MEMBER(logData2));
+
+			logData2 = logData.clone();
+			migrations.add(new ETL_DM_USR_BLACK_LIST_ENTRY(logData2));
+			
+			logData2 = logData.clone();
+			migrations.add(new ETL_DM_RISK_RANK(logData2));
 
 			stepStr = "DM多線程";
 			ExecutorService executor = Executors.newFixedThreadPool(5);
@@ -200,16 +283,31 @@ public class DMfunction {
 			}
 
 			System.out.println("線程池已經關閉");
-			
-//			logData2 = logData.clone();
-//			new ETL_DM_ACCTMAPPING_MRG(logData2).migration_File();
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.out.println("執行" + stepStr + "發生錯誤:" + ex.getMessage());
 		}
 
-		System.out.println("#### DMfunctionCMT End " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+//		System.out.println("#### DMfunctionCMT End " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+		System.out.println("#### DMfunctionDomain End " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+	}
+	
+	// 執行DataMigration後記錄檔
+	public static void callDMfuncionMerge(ETL_Bean_DM_LogData logData) {
+		try {
+		
+			// clone 新class指標用
+			ETL_Bean_DM_LogData logData2 = logData.clone();
+			new ETL_DM_ACCTMAPPING_MRG(logData2).migration_File();
+			
+			logData2 = logData.clone();
+			new ETL_DM_TR_MAPPING_MRG(logData2).migration_File();
+			
+		} catch (Exception ex) {
+			System.out.println("執行ETL_DM_ACCTMAPPING_MRG發生錯誤:" + ex.getMessage());
+		}
+		
 	}
 	
 	public static void main(String[] args) throws Exception {
@@ -238,11 +336,9 @@ public class DMfunction {
 //		newOne.setTotal_cnt(11);
 
 //		DMfunction.callDMfunctionETL(newOne);
-		DMfunction.callDMfunctionCMT(newOne);
+//		DMfunction.callDMfunctionCMT(newOne);
 		
 		System.out.println("執行結束");
 	}
-	
-	
 	
 }

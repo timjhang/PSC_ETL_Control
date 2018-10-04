@@ -39,7 +39,7 @@ public class ETL_DM_ALERT_ADDRESS extends Migration {
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
-		}finally {
+		} finally {
 			try {
 				// 資源後開,先關
 				if (cstmt != null) {
@@ -53,7 +53,7 @@ public class ETL_DM_ALERT_ADDRESS extends Migration {
 				e.printStackTrace();
 			}
 
-		} 
+		}
 		System.out.println("#######Migration - ETL_DM_ALERT_ADDRESS - End");
 	}
 }

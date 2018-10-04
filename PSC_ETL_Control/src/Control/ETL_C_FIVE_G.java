@@ -52,7 +52,7 @@ public class ETL_C_FIVE_G {
 			createCopyTableCLPScript(oldDate, newDate, central_No, "PARTY_ACCOUNT_REL", tableType);
 			createCopyTableCLPScript(oldDate, newDate, central_No, "PARTY_ADDRESS", tableType);
 			createCopyTableCLPScript(oldDate, newDate, central_No, "PARTY_EMAIL", tableType);
-			createCopyTableCLPScript(oldDate, newDate, central_No, "PARTY_NATIONALITY", tableType);
+//			createCopyTableCLPScript(oldDate, newDate, central_No, "PARTY_NATIONALITY", tableType);
 			createCopyTableCLPScript(oldDate, newDate, central_No, "PARTY_PARTY_REL", tableType);
 			createCopyTableCLPScript(oldDate, newDate, central_No, "PARTY_PHONE", tableType);
 				
@@ -69,7 +69,7 @@ public class ETL_C_FIVE_G {
 			runCLPScript(central_No, "GENERATE", "PARTY_ACCOUNT_REL", tableType);
 			runCLPScript(central_No, "GENERATE", "PARTY_ADDRESS", tableType);
 			runCLPScript(central_No, "GENERATE", "PARTY_EMAIL", tableType);
-			runCLPScript(central_No, "GENERATE", "PARTY_NATIONALITY", tableType);
+//			runCLPScript(central_No, "GENERATE", "PARTY_NATIONALITY", tableType);
 			runCLPScript(central_No, "GENERATE", "PARTY_PARTY_REL", tableType);
 			runCLPScript(central_No, "GENERATE", "PARTY_PHONE", tableType);
 			
@@ -103,7 +103,7 @@ public class ETL_C_FIVE_G {
 			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY_ACCOUNT_REL", tableType);
 			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY_ADDRESS", tableType);
 			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY_EMAIL", tableType);
-			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY_NATIONALITY", tableType);
+//			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY_NATIONALITY", tableType);
 			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY_PARTY_REL", tableType);
 			createPasteTableCLPScript(dropDate, newDate, central_No, "PARTY_PHONE", tableType);
 
@@ -120,7 +120,7 @@ public class ETL_C_FIVE_G {
 			runCLPScript(central_No, "RENEW", "PARTY_ACCOUNT_REL", tableType);
 			runCLPScript(central_No, "RENEW", "PARTY_ADDRESS", tableType);
 			runCLPScript(central_No, "RENEW", "PARTY_EMAIL", tableType);
-			runCLPScript(central_No, "RENEW", "PARTY_NATIONALITY", tableType);
+//			runCLPScript(central_No, "RENEW", "PARTY_NATIONALITY", tableType);
 			runCLPScript(central_No, "RENEW", "PARTY_PARTY_REL", tableType);
 			runCLPScript(central_No, "RENEW", "PARTY_PHONE", tableType);
 				

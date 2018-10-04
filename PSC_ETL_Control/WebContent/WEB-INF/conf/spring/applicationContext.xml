@@ -114,6 +114,26 @@
 		</property>
 	</bean>
 	
+	<!-- MigETL 控制程式 -->
+  	<bean id="jobDetailForMigETLSchedule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<bean id="MigETL" class="Control.ETL_C_MigMaster">
+			</bean>
+		</property>
+		<property name="targetMethod">
+			<value>execute</value>
+		</property>
+	</bean>
+	 
+	<bean id="MigETLTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetailForMigETLSchedule" />
+		</property>
+		<property name="cronExpression">
+			<value>30 * * * * ?</value>
+		</property>
+	</bean>
+	
 	<!-- MappingDataReceiver 控制程式  -->
   	<bean id="MappingDataReceiver" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="targetObject">
@@ -134,15 +154,104 @@
 		</property>
 	</bean>
 	
+	<!-- AML 發信批次   -->
+  	<bean id="MailSendScehdule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<bean id="MailSender" class="Control.ETL_C_MailSender">
+			</bean>
+		</property>
+		<property name="targetMethod">
+			<value>execute</value>
+		</property>
+	</bean>
+	 
+	<bean id="MailSendTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="MailSendScehdule" />
+		</property>
+		<property name="cronExpression">
+			<value>0 0/5 * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- ETL 早晨監控   -->
+  	<bean id="MorningSupervisionScehdule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<bean id="MorningSupervision" class="Control.ETL_C_Supervision">
+				<property name="ETL_Mail_Type" value="1"/>
+			</bean>
+		</property>
+		<property name="targetMethod">
+			<value>execute</value>
+		</property>
+	</bean>
+	 
+	<bean id="MorningSupervisionTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="MorningSupervisionScehdule" />
+		</property>
+		<property name="cronExpression">
+			<value>0 0 6 * * ?</value>
+			<!-- <value>0 * * * * ?</value> -->
+		</property>
+	</bean>
+	
+	<!-- ETL 中午監控   -->
+  	<bean id="NoonSupervisionScehdule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<bean id="NoonSupervision" class="Control.ETL_C_Supervision">
+				<property name="ETL_Mail_Type" value="2"/>
+			</bean>
+		</property>
+		<property name="targetMethod">
+			<value>execute</value>
+		</property>
+	</bean>
+	 
+	<bean id="NoonSupervisionTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="NoonSupervisionScehdule" />
+		</property>
+		<property name="cronExpression">
+			<value>0 30 10 * * ?</value>
+			<!-- <value>30 * * * * ?</value> -->
+		</property>
+	</bean>
+	
+	<!-- 關聯性驗證   -->
+  	<bean id="RelevanceCheckScehdule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<bean id="RelevanceCheck" class="Control.ETL_C_Relevance">
+			</bean>
+		</property>
+		<property name="targetMethod">
+			<value>execute</value>
+		</property>
+	</bean>
+	 
+	<bean id="RelevanceCheckTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="RelevanceCheckScehdule" />
+		</property>
+		<property name="cronExpression">
+			<value>0 0 9 * * ?</value>
+		</property>
+	</bean>
+	
 	<!-- 批次作業 -->
 	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
 			<list>
-				<!-- <ref local="MasterTrigger" />Master ETL 主排程控制程式 -->
-				<!-- <ref local="New5GTrigger" />Master ETL 建立5代Table控制程式 -->
-				<!-- <ref local="RerunTrigger" />Rerun 控制程式 -->
-				<!-- <ref local="MigrationTrigger" />Migration 控制程式 -->
-				<!-- <ref local="MappingDataTrigger" />Migration 對照檔控制程式 -->
+				<ref local="MasterTrigger" /><!-- Master ETL 主排程控制程式 -->
+				<ref local="New5GTrigger" /><!-- Master ETL 建立5代Table控制程式 -->
+				<ref local="RerunTrigger" /><!-- Rerun 控制程式 -->
+				<ref local="MigrationTrigger" /><!-- Migration 控制程式 -->
+				<ref local="MigETLTrigger" /><!-- MigETL 控制程式 -->
+				<ref local="MappingDataTrigger" /><!-- Migration 對照檔控制程式 -->
+				<ref local="MailSendTrigger" /><!-- AML 發信批次   -->
+				<ref local="MorningSupervisionTrigger" /><!-- ETL 早晨監控   -->
+				<ref local="NoonSupervisionTrigger" /><!-- ETL 中午監控   -->
+				<ref local="RelevanceCheckTrigger" /><!-- 關聯性驗證   -->
 			</list>
 		</property>
 	</bean>

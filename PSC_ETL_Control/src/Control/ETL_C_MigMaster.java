@@ -15,6 +15,7 @@ import java.util.List;
 
 import com.ibm.db2.jcc.DB2Types;
 
+import Bean.ETL_Bean_MigrationUnit;
 import Control.ETL_C_Profile;
 import DB.ConnectionHelper;
 import DB.ETL_P_Log;
@@ -24,7 +25,7 @@ import Profile.ETL_Profile;
 import Tool.ETL_Tool_FormatCheck;
 import Tool.ETL_Tool_Mail;
 
-public class ETL_C_Master {
+public class ETL_C_MigMaster {
 	
 	// 是否為正式參數
 	private static boolean isFormal = true;
@@ -38,32 +39,51 @@ public class ETL_C_Master {
     	//  使用編號" 1"設定檔(BatchRunTimeConfig)
     	boolean isRun = false;
     	String runBatchNo = "";
-    	if (isFormal) {
-    		// 正式版本
-    		runBatchNo = " 1";
-    		isRun = ETL_C_BatchTime.isExecute(strTime, runBatchNo);
-    	} else {
-    		// 測試版本
-    		runBatchNo = " 4";
-    		isRun = ETL_C_BatchTime.isExecute(strTime, runBatchNo); // for  test
-    	}
+    	
+		// 正式版本
+		runBatchNo = "10";
+		isRun = ETL_C_BatchTime.isExecute(strTime, runBatchNo);
     	
 		if (!isRun) {
-			
-			System.out.println("isRun = false  " + runBatchNo);
+//			System.out.println("isRun = false  " + runBatchNo);
 			return;
 		}
 		
-		// 若Rerun執行則, 則ETL正常執行等待
+		// 若Rerun執行則, 則等待
     	if (isRerunExecute()) {
-    		System.out.println("####ETL_C_Master - Rerun 作業進行, 不進行ETL作業。  " + runBatchNo);
-    		ETL_P_Log.write_Runtime_Log("ETL_C_Master", "####ETL_C_Master - Rerun 作業進行, 不進行ETL作業。  " + runBatchNo);
+//    		System.out.println("####ETL_C_MigMaster - Rerun 作業進行, 不進行ETL作業。  " + runBatchNo);
+//    		ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", "####ETL_C_MigMaster - Rerun 作業進行, 不進行ETL作業。  " + runBatchNo);
     		return;
     	}
-		
-		System.out.println("#### ETL_C_Master Start  " + runBatchNo);
-		
-		// *執行rerun時, 寫入一筆紀錄, 將wait到rerun結束後執行
+    	
+    	// 若ETL計畫執行中, 則等待
+    	if (ETL_C_Migration.isETLplanExecute(new String[1], new String[1])) {
+//    		System.out.println("####ETL_C_MigMaster - ETL計畫執行中, 不進行MigETL作業。  " + runBatchNo);
+//    		ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", "####ETL_C_MigMaster - ETL計畫執行中, 不進行MigETL作業。  " + runBatchNo);
+    		return;
+    	}
+    	
+    	// 取得執行中心代號(序號表ETL_CENTRAL_INFO), 取得執行完Migration中心資料
+		List<ETL_Bean_MigrationUnit> needMigETLCentralList = getMidMigrationList();
+ 		if (needMigETLCentralList.size() == 0) {
+ 			return;
+ 		}
+ 		// 資料日期
+ 		Date record_date = needMigETLCentralList.get(0).getRecordDate();
+ 		List<String> migETLCentralList = new ArrayList<String>(1);
+ 		migETLCentralList.add(needMigETLCentralList.get(0).getCentralNo());
+ 		
+ 		Date before_record_date;
+ 		try {
+        	before_record_date = getBeforeRecordDate(record_date);
+        } catch (Exception ex) {
+        	ex.printStackTrace();
+        	System.out.println("#### ETL_C_MigMaster - 無法取得上一個資料日期，無法繼續進行！");
+        	ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", "#### ETL_C_MigMaster - 無法取得上一個資料日期，無法繼續進行！");
+        	return;
+        }
+ 		
+		System.out.println("#### ETL_C_MigMaster Start  " + runBatchNo);
 		
 		/* 取得可用ETL_Server資訊(資訊表ETL_SERVER_INFO), 檢查過濾ETL_Server是否正常可用 */
 		// 如果具有可用ETL Server, 才開始進行, 否則這一輪結束
@@ -77,7 +97,7 @@ public class ETL_C_Master {
 		
 		if (etlServerList.size() == 0) {
 			System.out.println("#### 無可用ETL Server 不進行作業");
-			ETL_P_Log.write_Runtime_Log("ETL_C_Master", "#### 無可用ETL Server 不進行作業");
+			ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", "#### 無可用ETL Server 不進行作業");
 			return;
 		}
 		
@@ -88,96 +108,40 @@ public class ETL_C_Master {
 			System.out.println("Server_No : " + etlServerList.get(i)[0] + " , Server : " + etlServerList.get(i)[1] + " , IP : " + etlServerList.get(i)[2]);
 		}
         
-        Date record_date;
-		Date before_record_date;
-        if (isFormal) {
-        	// 正式版本
-        	
-//        	// 產生資料日期(昨天)
-//    		Calendar cal = Calendar.getInstance(); // 今天時間
-//            cal.add(Calendar.DATE, -1); // 昨天時間
-//	        record_date = cal.getTime();
-//	        
-//	        // test  temp  取得昨天以前(包含), 最後的上班日
-//	        List<String> central_list;
-//			Date[] nextRecordDateAry = new Date[2];
-//			central_list = ETL_C_New5G.getNeedNewG_LoadTemp_Central(record_date, nextRecordDateAry);
-//			record_date = nextRecordDateAry[0];
-//	        // test  temp  End
-        	
-			try {
-				record_date = getBeforeRecordDate(new Date());
-			} catch (Exception ex) {
-				ex.printStackTrace();
-	        	System.out.println("無法取得資料日期，無法繼續進行！");
-	        	ETL_P_Log.write_Runtime_Log("ETL_C_Master", "無法取得資料日期，無法繼續進行！");
-	        	return;
-			}
-	       
-	        try {
-	        	before_record_date = getBeforeRecordDate(record_date);
-	        } catch (Exception ex) {
-	        	ex.printStackTrace();
-	        	System.out.println("無法取得上一個資料日期，無法繼續進行！");
-	        	ETL_P_Log.write_Runtime_Log("ETL_C_Master", "無法取得上一個資料日期，無法繼續進行！");
-	        	return;
-	        }
-        } else {
-        	// 測試版本
-    		try {
-    			before_record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Before_Record_Date_Str);
-    			record_date = new SimpleDateFormat("yyyyMMdd").parse(ETL_Profile.Record_Date_Str);
-    		} catch (Exception ex) {
-    			ex.printStackTrace();
-    			ETL_P_Log.write_Runtime_Log("ETL_C_Master", ex.getMessage());
-    			before_record_date = new Date();
-    			record_date = new Date();
-    		}
-        }
-		
         System.out.println("讀取資料日期：" + new SimpleDateFormat("yyyyMMdd").format(record_date)); // for test
-		
-		// 取得執行中心代號(序號表ETL_CENTRAL_INFO), 取得今天未執行中心
-		List<String> noProcessCentralList = getNoProcessCentral(record_date);
-		System.out.println("noProcessCentralList size = " + noProcessCentralList.size()); // for test
-		ETL_P_Log.write_Runtime_Log("ETL_C_Master", "noProcessCentralList size = " + noProcessCentralList.size());
-		
-		if (noProcessCentralList.size() == 0) {
-			System.out.println("#### noProcessCentralList 無需要處理中心");
-			ETL_P_Log.write_Runtime_Log("ETL_C_Master", "#### noProcessCentralList 無需要處理中心");
-			return;
-		}
-		System.out.println("no Process Central List :");
-		for (int i = 0; i < noProcessCentralList.size(); i++) {
-			System.out.println(noProcessCentralList.get(i));
-		}
 		
 		// 取得批次編號(序號表ETL_PARAMETER_INFO)
 		String batchNo = getETL_BatchNo();
 		System.out.println("BatchNo = " + batchNo); // for test
-		ETL_P_Log.write_Runtime_Log("ETL_C_Master", "BatchNo = " + batchNo);
+		ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", "BatchNo = " + batchNo);
 		
 		// 掃描中心SFTP今日檔案是否已上傳
-		List<String> readyCentralList = checkReadyCentral(noProcessCentralList, record_date, batchNo);
+		List<String> readyCentralList = checkReadyCentral(migETLCentralList, record_date, batchNo);
 		System.out.println("readyCentralList size = " + readyCentralList.size()); // for test
-		ETL_P_Log.write_Runtime_Log("ETL_C_Master", "readyCentralList size = " + readyCentralList.size());
+		ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", "readyCentralList size = " + readyCentralList.size());
 		
 		if (readyCentralList.size() == 0) {
 			System.out.println("#### readyCentralList 無需要處理中心");
-			ETL_P_Log.write_Runtime_Log("ETL_C_Master", "#### readyCentralList 無需要處理中心");
+			ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", "#### readyCentralList 無需要處理中心");
 			return;
 		}
 		System.out.println("ReadyCentralList :");
-		ETL_P_Log.write_Runtime_Log("ETL_C_Master", "ReadyCentralList :");
+		ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", "ReadyCentralList :");
 		for (int i = 0; i < readyCentralList.size(); i++) {
 			System.out.println(readyCentralList.get(i));
-			ETL_P_Log.write_Runtime_Log("ETL_C_Master", readyCentralList.get(i));
+			ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", readyCentralList.get(i));
 		}
+		
+		// 標記為Migration ETL開始
+		ETL_C_PROCESS.updateNewGenerationMigStatus(record_date, readyCentralList.get(0), "MidStart", "");
 		
 		String[] ptr_upload_no = new String[1];
 		
-		// 指定ETL任務
-		boolean etlSuccess = ETL_C_PROCESS.executeETL(etlServerList.get(0), batchNo, readyCentralList.get(0), ptr_upload_no, record_date, before_record_date);
+		boolean etlSuccess = true;
+		if (isFormal) {
+			// 指定ETL任務
+			etlSuccess = ETL_C_PROCESS.executeMigETL(etlServerList.get(0), batchNo, readyCentralList.get(0), ptr_upload_no, record_date, before_record_date);
+		}
 		
 		// 執行正常完整, 則寫入
 		if (etlSuccess) {
@@ -187,7 +151,7 @@ public class ETL_C_Master {
 				ETL_P_RunState.runStateStart(readyCentralList.get(0));
 			} else {
 				// 執行runstate程式
-				ETL_P_RunState.runStateStart(readyCentralList.get(0));
+//				runStateSRC(readyCentralList.get(0));
 			}
 			
 			if (isFormal) {
@@ -198,23 +162,24 @@ public class ETL_C_Master {
 						+ " , central_no = " + readyCentralList.get(0) + " , upload_no = " + ptr_upload_no[0]);
 				if (isSuccess) {
 					System.out.println("寫入ETL_LOAD_GAML成功!");
-					ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML成功!");
+					ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", "寫入ETL_LOAD_GAML成功!");
 					
 					// 寫入執行成功信件
 					String mailContent = 
 							"單位：" + readyCentralList.get(0) + "  資料日期：" + new SimpleDateFormat("yyyyMMdd").format(record_date) +
-							"  執行AML_ETL每日異動檔匯入完畢。";
+							"  執行DataMigration - 每日異動完畢！";
 					ETL_Tool_Mail.writeAML_Mail(readyCentralList.get(0), "SYSAdmin", null, "AML_ETL 系統通知", mailContent);
 				} else {
 					System.out.println("寫入ETL_LOAD_GAML失敗!");
-					ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML失敗!");
+					ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", "寫入ETL_LOAD_GAML失敗!");
 					
 					// 寫入信件
 					String mailContent = 
 							"單位：" + readyCentralList.get(0) + "  資料日期：" + new SimpleDateFormat("yyyyMMdd").format(record_date) +
-							"  執行AML_ETL每日異動檔啟動CDD/TMS失敗，請洽IT人員。";
+							"  執行DataMigration - 每日異動啟動CDD/TMS失敗，請洽IT人員。";
 					ETL_Tool_Mail.writeAML_Mail(readyCentralList.get(0), "SYSAdmin", null, "AML_ETL 系統通知", mailContent);
 				}
+				
 			} else {
 				// 寫入ETL完成紀錄ETL_LOAD_GAML
 				boolean isSuccess = write_ETL_LOAD_GAML(batchNo, record_date, readyCentralList.get(0), ptr_upload_no[0]);
@@ -223,10 +188,10 @@ public class ETL_C_Master {
 						+ " , central_no = " + readyCentralList.get(0) + " , upload_no = " + ptr_upload_no[0]);
 				if (isSuccess) {
 					System.out.println("寫入ETL_LOAD_GAML成功!");
-					ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML成功!");
+					ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", "寫入ETL_LOAD_GAML成功!");
 				} else {
 					System.out.println("寫入ETL_LOAD_GAML失敗!");
-					ETL_P_Log.write_Runtime_Log("ETL_C_Master", "寫入ETL_LOAD_GAML失敗!");
+					ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", "寫入ETL_LOAD_GAML失敗!");
 				}
 				
 //				System.out.println("跳過ETL_LOAD_GAML寫入，因為是全量！");
@@ -234,12 +199,39 @@ public class ETL_C_Master {
 			}
 			
 		} else {
+			// 更新5代紀錄Table MigStatus 註記為第二階段錯誤
+			ETL_C_PROCESS.updateNewGenerationMigStatus(record_date, readyCentralList.get(0), "Error_2", 
+					"central_no = " + readyCentralList.get(0) + " , 資料日期 = " + new SimpleDateFormat("yyyyMMdd").format(record_date) + "  Migration Daily Run失敗!!");
+			// 寫入runtime log
+			ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", 
+					"central_no = " + readyCentralList.get(0) + " , 資料日期 = " + new SimpleDateFormat("yyyyMMdd").format(record_date) + "  Migration Daily Run失敗!!");
 			// 寫入執行失敗信件
 			String mailContent = 
 					"單位：" + readyCentralList.get(0) + "  資料日期：" + new SimpleDateFormat("yyyyMMdd").format(record_date) +
-					"  執行AML_ETL每日異動檔執行中出現錯誤，請洽IT人員協助調查/處理。";
+					"  執行DataMigration - 每日異動出現錯誤，請洽IT人員協助調查/處理。";
 			ETL_Tool_Mail.writeAML_Mail(readyCentralList.get(0), "SYSAdmin", null, "AML_ETL 系統通知", mailContent);
 		}
+		
+		try {
+			// 若MigETL 資料日期為昨天以前最晚營業日, 則更新5代紀錄Table 讓備檔自動進行
+			Date yesterdayRecordDate = ETL_C_Master.getBeforeRecordDate(new Date());
+			System.out.println("yesterdayRecordDate = " + new SimpleDateFormat("yyyyMMdd").format(yesterdayRecordDate));
+			if (record_date.equals(yesterdayRecordDate)) {
+				Date nextRecordDate = ETL_C_Rerun.getNextRecordDate(yesterdayRecordDate);
+				System.out.println("更新" + readyCentralList.get(0) + " "+ new SimpleDateFormat("yyyyMMdd").format(nextRecordDate) + " 備檔紀錄");
+				ETL_C_FIVE_G.updateNewGenerationPrepareStatus(nextRecordDate, readyCentralList.get(0), null, "");
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			System.out.println("更新5代紀錄Table 讓備檔自動進行失敗!");
+			ETL_P_Log.write_Runtime_Log("ETL_C_MigMaster", "更新5代紀錄Table 讓備檔自動進行失敗!");
+		}
+		
+		// 更新ETL 執行紀錄  讓備檔作業可以繼續進行
+		ETL_C_PROCESS.updateNewGenerationETLStatus(record_date, readyCentralList.get(0), "End", "");
+		
+		// 更新5代紀錄Table MigStatus 註記為結束
+		ETL_C_PROCESS.updateNewGenerationMigStatus(record_date, readyCentralList.get(0), "End", "");
 		
 		// 清除交易性主檔180天前資料  // 第一次不開啟    2018.05.16  test  temp
 //		if (remove_OLD_Datas(readyCentralList.get(0))) {
@@ -248,7 +240,7 @@ public class ETL_C_Master {
 //			System.out.print(readyCentralList.get(0) + " 刪除交易性舊資料  失敗!!");
 //		}
 		
-		System.out.println("#### ETL_C_Master End");
+		System.out.println("#### ETL_C_MigMaster End");
 	}
 	
 	// 取得可用ETL Server資訊
@@ -306,7 +298,7 @@ public class ETL_C_Master {
 	
 	// 檢核ETL Server 是否正常可連線
 	// 排除連線異常，不可使用ETL Server，並給出提示訊息
-	public static void filterETLServerOK(List<String[]> etlServerList) {
+	private static void filterETLServerOK(List<String[]> etlServerList) {
 		
 		for (int i = 0; i < etlServerList.size(); i++) {
 			// 若ETL Server Service沒有正常啟動，該ETL Server會從List中移除
@@ -318,57 +310,57 @@ public class ETL_C_Master {
 	}
 	
 	// 取得待執行共用中心List
-	private static List<String> getNoProcessCentral(Date record_date) {
-		
-		List<String> resultList = new ArrayList<String>();
-		
-		try {
-			
-			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.getNoProcessCentral(?,?,?,?)}";
-			
-			Connection con = ConnectionHelper.getDB2Connection();
-			CallableStatement cstmt = con.prepareCall(sql);
-			
-			cstmt.registerOutParameter(1, Types.INTEGER);
-			cstmt.setDate(2, new java.sql.Date(record_date.getTime()));
-			cstmt.registerOutParameter(3, DB2Types.CURSOR);
-			cstmt.registerOutParameter(4, Types.VARCHAR);
-			
-			cstmt.execute();
-			
-			int returnCode = cstmt.getInt(1);
-			
-			// 有錯誤釋出錯誤訊息   不往下繼續進行
-			if (returnCode != 0) {
-				String errorMessage = cstmt.getString(4);
-	            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
-//	            throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
-	            ETL_P_Log.write_Runtime_Log("getNoProcessCentral", "Error Code = " + returnCode + ", Error Message : " + errorMessage);
-	            
-	            return resultList;
-			}
-			
-			java.sql.ResultSet rs = (java.sql.ResultSet) cstmt.getObject(3);
-			while (rs.next()) {
-	        	String centralInfo = rs.getString(1);
-	        	if (centralInfo != null) {
-	        		centralInfo = centralInfo.trim();
-	        	}
-	        	resultList.add(centralInfo);
-	        }
-	        
-//	        System.out.println("List Size = " + resultList.size()); // for test
-		
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			ETL_P_Log.write_Runtime_Log("getNoProcessCentral", ex.getMessage());
-		}
-		
-		return resultList;
-	}
+//	private static List<String> getMigETLCentral(Date record_date) {
+//		
+//		List<String> resultList = new ArrayList<String>();
+//		
+//		try {
+//			
+//			String sql = "{call " + ETL_Profile.db2TableSchema + ".Migration.getMigCentral(?,?,?,?)}";
+//			
+//			Connection con = ConnectionHelper.getDB2Connection();
+//			CallableStatement cstmt = con.prepareCall(sql);
+//			
+//			cstmt.registerOutParameter(1, Types.INTEGER);
+//			cstmt.setDate(2, new java.sql.Date(record_date.getTime()));
+//			cstmt.registerOutParameter(3, DB2Types.CURSOR);
+//			cstmt.registerOutParameter(4, Types.VARCHAR);
+//			
+//			cstmt.execute();
+//			
+//			int returnCode = cstmt.getInt(1);
+//			
+//			// 有錯誤釋出錯誤訊息   不往下繼續進行
+//			if (returnCode != 0) {
+//				String errorMessage = cstmt.getString(4);
+//	            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+////	            throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+//	            ETL_P_Log.write_Runtime_Log("getNoProcessCentral", "Error Code = " + returnCode + ", Error Message : " + errorMessage);
+//	            
+//	            return resultList;
+//			}
+//			
+//			java.sql.ResultSet rs = (java.sql.ResultSet) cstmt.getObject(3);
+//			while (rs.next()) {
+//	        	String centralInfo = rs.getString(1);
+//	        	if (centralInfo != null) {
+//	        		centralInfo = centralInfo.trim();
+//	        	}
+//	        	resultList.add(centralInfo);
+//	        }
+//	        
+////	        System.out.println("List Size = " + resultList.size()); // for test
+//		
+//		} catch (Exception ex) {
+//			ex.printStackTrace();
+//			ETL_P_Log.write_Runtime_Log("getNoProcessCentral", ex.getMessage());
+//		}
+//		
+//		return resultList;
+//	}
 	
 	// 取得批次編號(序號表ETL_PARAMETER_INFO)
-	public static String getETL_BatchNo() {
+	private static String getETL_BatchNo() {
 		
 		String result = "";
 		
@@ -408,7 +400,7 @@ public class ETL_C_Master {
 	}
 	
 	// 確認是否有對應Master檔
-	public static boolean checkHasMasterTxt(String central_No) throws Exception {
+	private static boolean checkHasMasterTxt(String central_No) throws Exception {
 		
 		// 組成目標Master檔名
 		String masterFileName = central_No + "MASTER.txt";
@@ -476,7 +468,7 @@ public class ETL_C_Master {
 	}
 	
 	// 解析Master檔內容
-	public static List<String> parseMasterTxtContent(String central_No) throws Exception {
+	private static List<String> parseMasterTxtContent(String central_No) throws Exception {
 		
 		// 結果字串
 		List<String> resultList = new ArrayList<String>();
@@ -586,7 +578,7 @@ public class ETL_C_Master {
 	}
 	
 	// 寫入Master Log
-	public static boolean hasMasterLog(Date record_date, String central_No, String upload_No, String batch_no) {
+	private static boolean hasMasterLog(Date record_date, String central_No, String upload_No, String batch_no) {
 		
 		try {
 			
@@ -656,7 +648,7 @@ public class ETL_C_Master {
 	}
 	
 	// 寫入ETL完成紀錄
-	public static boolean write_ETL_LOAD_GAML(String batch_no, Date record_date, String central_no, String upload_no) {
+	private static boolean write_ETL_LOAD_GAML(String batch_no, Date record_date, String central_no, String upload_no) {
 		
 		try {
 			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.write_ETL_LOAD_GAML(?,?,?,?,?,?)}";
@@ -691,8 +683,8 @@ public class ETL_C_Master {
 		}
 	}
 	
-//	// 將中心src Table 進行runstate
-//	public static void runStateSRC(String central_no) {
+	// 將中心src Table 進行runstate
+//	private static void runStateSRC(String central_no) {
 //		System.out.println("執行 runStateSRC " + central_no + " Start");
 //		
 //		try {
@@ -756,7 +748,7 @@ public class ETL_C_Master {
 	}
 	
 	// 查詢上一個資料日期
-	public static Date getBeforeRecordDate(Date recordDate) throws Exception {
+	private static Date getBeforeRecordDate(Date recordDate) throws Exception {
 		
 		try {
 			
@@ -793,8 +785,64 @@ public class ETL_C_Master {
 		}
 	}
 	
+	// 取得須進行Migration中心代號
+	private static List<ETL_Bean_MigrationUnit> getMidMigrationList() {
+		List<ETL_Bean_MigrationUnit> resultList = new ArrayList<ETL_Bean_MigrationUnit>();
+		
+		try {
+			
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".Migration.getMidMigrationCentral(?,?,?)}";
+			
+			Connection con = ConnectionHelper.getDB2Connection();
+			CallableStatement cstmt = con.prepareCall(sql);
+			
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.registerOutParameter(2, DB2Types.CURSOR);
+			cstmt.registerOutParameter(3, Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			int returnCode = cstmt.getInt(1);
+			
+			// 有錯誤釋出錯誤訊息   不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(3);
+	            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+//		            throw new Exception("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            ETL_P_Log.write_Runtime_Log("getMigrationList", "Error Code = " + returnCode + ", Error Message : " + errorMessage);
+	            
+	            return resultList;
+			}
+			
+			java.sql.ResultSet rs = (java.sql.ResultSet) cstmt.getObject(2);
+			while (rs.next()) {
+	        	String centralInfo = rs.getString(1);
+	        	Date recordDate = new Date(rs.getDate(2).getTime());
+	        	if (centralInfo != null) {
+	        		centralInfo = centralInfo.trim();
+	        	}
+	        	String batchNo = rs.getString(3);
+	        	
+	        	ETL_Bean_MigrationUnit data = new ETL_Bean_MigrationUnit();
+	        	data.setCentralNo(centralInfo);
+	        	data.setRecordDate(recordDate);
+	        	data.setBatchNo(batchNo);
+	        	
+	        	resultList.add(data);
+	        }
+	        
+//	        System.out.println("List Size = " + resultList.size()); // for test
+		
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			ETL_P_Log.write_Runtime_Log("getMigrationList", ex.getMessage());
+		}
+		
+		return resultList;
+	}
+	
 	// 確認rerun是否執行中
-	public static boolean isRerunExecute() {
+	private static boolean isRerunExecute() {
 		
 		try {
 			
@@ -834,52 +882,11 @@ public class ETL_C_Master {
 		}
 	}
 	
-	// 確認rerun是否執行中
-	public static boolean isRerunExecuting() {
-		
-		try {
-			
-			String sql = "{call " + ETL_Profile.db2TableSchema + ".Control.isRerunExecuting(?,?,?)}";
-			
-			Connection con = ConnectionHelper.getDB2Connection();
-			CallableStatement cstmt = con.prepareCall(sql);
-			
-			cstmt.registerOutParameter(1, Types.INTEGER);
-			cstmt.registerOutParameter(2, Types.INTEGER);
-			cstmt.registerOutParameter(3, Types.VARCHAR);
-			
-			cstmt.execute();
-			
-			int returnCode = cstmt.getInt(1);
-			
-			// 有錯誤釋出錯誤訊息   不往下繼續進行
-			if (returnCode != 0) {
-				String errorMessage = cstmt.getString(3);
-//		            System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
-				ETL_P_Log.write_Runtime_Log("isRerunExecuting", "Error Code = " + returnCode + ", Error Message : " + errorMessage);
-		        return false;
-			}
-			
-			int rerunCount = cstmt.getInt(2);
-			
-			// rerun資料批數
-			if (rerunCount > 0) {
-				return true;
-			} else {
-				return false;
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			ETL_P_Log.write_Runtime_Log("isRerunExecuting", ex.getMessage());
-			return false;
-		}
-	}
-	
 	public static void main(String[] args) {
 		
 		try {
 		
-			System.out.println("ETL_C_Master 測試開始!");
+			System.out.println("ETL_C_MigMaster 測試開始!");
 			
 //			boolean boo = hasMasterLog(new SimpleDateFormat("yyyyMMdd").parse("20180608"), "600", "001", "ETL00017");
 //			System.out.println(boo);
@@ -892,10 +899,7 @@ public class ETL_C_Master {
 //			System.out.println(hasMasterLog(new SimpleDateFormat("yyyyMMdd").parse("20180425"), "928", "003", "RER00028"));
 //			System.out.println(hasMasterLog(new SimpleDateFormat("yyyyMMdd").parse("20180425"), "928", "002", "RER00028"));
 			
-//			Date record_date = getBeforeRecordDate(new Date());
-//			System.out.println(record_date);
-			
-			System.out.println("ETL_C_Master 測試結束!");
+			System.out.println("ETL_C_MigMaster 測試結束!");
 			
 	//		boolean add5GSuccess = false;
 	//		try {
