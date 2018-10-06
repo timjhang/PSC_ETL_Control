@@ -16,14 +16,13 @@ import Bean.ETL_Bean_DM_LogData;
 import DB.ConnectionHelper;
 import Profile.ETL_Profile;
 import Tool.ETL_Tool_CastObjUtil;
-import Tool.ETL_Tool_StringX;
 
 public class ETL_DM_CHANGE_PartyID extends Migration {
 	//ETL_DM_ALERT_ACCOUNT_BALANCE
 	private String storeProcedureName;
 	private String connectionDB;
 	
-	public ETL_DM_CHANGE_PartyID(ETL_Bean_DM_LogData logData,String connectionDB,String storeProcedureName) {
+	public ETL_DM_CHANGE_PartyID(ETL_Bean_DM_LogData logData, String connectionDB, String storeProcedureName) {
 		super(logData);
 		this.connectionDB = connectionDB;
 		this.storeProcedureName = storeProcedureName;
@@ -82,7 +81,7 @@ public class ETL_DM_CHANGE_PartyID extends Migration {
 	 * 
 	 * @return
 	 */
-	public static List<Migration> getMigrationByChangesPartyID (ETL_Bean_DM_LogData logData){
+	public static List<Migration> getMigrationByChangesPartyID (ETL_Bean_DM_LogData logData) {
 		
 		List<Migration> migrations = new ArrayList<Migration>();
 		
@@ -128,9 +127,9 @@ public class ETL_DM_CHANGE_PartyID extends Migration {
 			logData2 = logData.clone();
 			logData2.setFile_name(storeProcedureName);
 			
-			if(storeProcedureName.substring(0, 5).equals("trans")) {
-				migrations.add(new ETL_DM_CHANGE_PartyID(logData2,logData2.getCentral_no(),logData2.getFile_name()));
-			}else {
+			if (storeProcedureName.substring(0, 5).equals("trans")) {
+				migrations.add(new ETL_DM_CHANGE_PartyID(logData2, logData2.getCentral_no(), logData2.getFile_name()));
+			} else {
 				migrations.add(new ETL_DM_CHANGE_PartyID(logData2, "DB", logData2.getFile_name()));
 			}
 		}

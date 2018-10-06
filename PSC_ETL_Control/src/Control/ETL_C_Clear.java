@@ -36,8 +36,6 @@ public class ETL_C_Clear {
 		if (dbServerSet.isDirectory()) {
 			System.out.println("具有D槽，應為DB所在Server！");
 			System.out.println("進行相關DB Log刪除");
-			
-			
 		}
 		
 		
