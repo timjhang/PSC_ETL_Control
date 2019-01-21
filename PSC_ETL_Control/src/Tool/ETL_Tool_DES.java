@@ -106,9 +106,9 @@ public class ETL_Tool_DES {
 //			System.out.println(encrypt(";currentFunctionPath="));
 //			System.out.println(encrypt(";"));
 			
-			System.out.println(ETL_Tool_DES.decrypt("2772602b4cd74bec30a2869c8e5426a6"));
+			System.out.println(ETL_Tool_DES.decrypt("4ac3ce9609e110fee69d06fd1ec8c823"));
 			System.out.println(ETL_Tool_DES.decrypt("f8359cb46aebc26d"));
-			System.out.println(ETL_Tool_DES.decrypt("29ee04b861a87da1"));
+//			System.out.println(ETL_Tool_DES.decrypt("29ee04b861a87da1"));
 			
 //			System.out.println(encrypt("40"));
 //			System.out.println(encrypt("12"));

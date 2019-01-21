@@ -593,11 +593,11 @@ public class ETL_Tool_Mail {
 		System.out.println("測試  Start");
 		
 		
-		if (writeAML_Mail("018", "SYSAdmin", null, "測試信件3", "測試內容3")) {
-			System.out.println("執行成功");
-		} else {
-			System.out.println("執行失敗");
-		}
+//		if (writeAML_Mail("018", "SYSAdmin", null, "測試信件3", "測試內容3")) {
+//			System.out.println("執行成功");
+//		} else {
+//			System.out.println("執行失敗");
+//		}
 		
 //		List<String> list = getUnitMails("Center", "600");
 //		List<String> list = getUnitMails("Center", "018");
@@ -615,11 +615,13 @@ public class ETL_Tool_Mail {
 		
 //		List<String> ccUsers =  ETL_Tool_Mail.getEmails(null, "Administrator");
 
-		// sendToUsers.add("timjhang@pershing.com.tw");
+		List<String> sendToUsers = new ArrayList<String>();
+		sendToUsers.add("timjhang@pershing.com.tw");
 		// ccUsers.add("ciss00217@gmail.com");
 		// ccUsers.add("ianchien@pershing.com.tw");
 
-		//ETL_Tool_Mail.sendMail(sendToUsers, ccUsers, "測試", "內容");
+//		ETL_Tool_Mail.sendMail(sendToUsers, ccUsers, "測試", "內容");
+		ETL_Tool_Mail.sendMail(sendToUsers, null, null, "測試", "內容");
 		
 		///////
 //		List<String> list1 = new ArrayList<String>();

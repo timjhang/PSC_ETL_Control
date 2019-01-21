@@ -97,6 +97,10 @@ public class ETL_C_PROCESS {
 			// 更新報送單位狀態"使用中"
 			updateCentralTime(central_no, record_Date, upload_no, "Start");
 			
+			// 清除 ERROR_LOG_DOWNLOAD
+			boolean clearErrorDowbload = true;
+			clearErrorDowbload = ETL_C_CallWS.call_ETL_Server_clear_ERROR_LOG_DOWNLOAD(etlServerInfo[2]);
+			
 			// 寫入E Master Log
 			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "E", etlServerInfo[0])) {
 				throw new Exception("E Master Log已存在\n" + exeInfo);
@@ -108,6 +112,10 @@ public class ETL_C_PROCESS {
 			// 更新 E Master Log
 			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "E", "E", "Y", "");
 			
+			// Error Log 寫入 ERROR_LOG_DOWNLOAD
+			if (clearErrorDowbload) {
+				ETL_C_CallWS.call_ETL_Server_write_ERROR_LOG_DOWNLOAD(etlServerInfo[2], exc_record_dateStr, central_no, upload_no);
+			}
 			
 			// 寫入T Master Log
 			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "T", etlServerInfo[0])) {
@@ -241,6 +249,10 @@ public class ETL_C_PROCESS {
 			// 更新報送單位狀態"使用中"
 			updateRerunCentralTime(central_no, record_Date, upload_no, "Start");
 			
+			// 清除 ERROR_LOG_DOWNLOAD
+			boolean clearErrorDowbload = true;
+			clearErrorDowbload = ETL_C_CallWS.call_ETL_Server_clear_ERROR_LOG_DOWNLOAD(etlServerInfo[2]);
+			
 			// 寫入E Master Log
 			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "E", etlServerInfo[0])) {
 				throw new Exception("E Master Log已存在\n" + exeInfo);
@@ -252,6 +264,10 @@ public class ETL_C_PROCESS {
 			// 更新 E Master Log
 			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "E", "E", "Y", "");
 			
+			// Error Log 寫入 ERROR_LOG_DOWNLOAD
+			if (clearErrorDowbload) {
+				ETL_C_CallWS.call_ETL_Server_write_ERROR_LOG_DOWNLOAD(etlServerInfo[2], exc_record_dateStr, central_no, upload_no);
+			}
 			
 			// 寫入T Master Log
 			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "T", etlServerInfo[0])) {
@@ -377,6 +393,8 @@ public class ETL_C_PROCESS {
 			System.out.println("#### ETL_C_PROCESS fileInfo[0]" + fileInfo[0] + " " + server_no);
 			System.out.println("#### ETL_C_PROCESS fileInfo[1]" + fileInfo[1] + " " + server_no);
 
+			// 清除 ERROR_LOG_DOWNLOAD
+			ETL_C_CallWS.call_ETL_Server_clear_ERROR_LOG_DOWNLOAD(etlServerInfo[2]);
 			
 			// 寫入E Master Log
 			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "E", etlServerInfo[0])) {
@@ -520,6 +538,8 @@ public class ETL_C_PROCESS {
 			// 更新 E Master Log
 			ETL_C_PROCESS.updateMasterLog(batch_No, central_no, record_Date, upload_no, "E", "E", "Y", "");
 			
+			// Error Log 寫入 ERROR_LOG_DOWNLOAD
+			ETL_C_CallWS.call_ETL_Server_write_ERROR_LOG_DOWNLOAD(etlServerInfo[2], exc_record_dateStr, central_no, upload_no);
 			
 			// 寫入T Master Log
 			if (!ETL_C_PROCESS.writeMasterLog(batch_No, central_no, record_Date, upload_no, "T", etlServerInfo[0])) {
@@ -976,6 +996,14 @@ public class ETL_C_PROCESS {
 			logData2 = logData.clone();
 			logData2.setPROGRAM_NO("ETL_L_TRANSFER");
 			loads.add(new ETL_L_TRANSFER(logData2, fedServer, runTable));
+			
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_AGENT");
+			loads.add(new ETL_L_AGENT(logData2, fedServer, runTable));
+			
+			logData2 = logData.clone();
+			logData2.setPROGRAM_NO("ETL_L_SCUSTBOXOPEN");
+			loads.add(new ETL_L_SCUSTBOXOPEN(logData2, fedServer, runTable));
 			
 			logData2 = logData.clone();
 			logData2.setPROGRAM_NO("ETL_L_ERROR_LOG");

@@ -478,20 +478,25 @@ public class ETL_Rerun {
 	public static void main(String[] argv) throws Exception {
 		
 		/** 測試  是否可進行ETL Rerun **/
-		String[] errorMsg = new String[3]; // 必須
+//		String[] errorMsg = new String[3]; // 必須
 		
-//		errorMsg[0] = ""; // 測試用(正式使用不須)
+		Date date1 = new SimpleDateFormat("yyyyMMdd").parse("20181031");
+		Date date2 = new SimpleDateFormat("yyyyMMdd").parse("20181101");
+		System.out.println(date1.before(date2));
 		
-		if (!ETL_Rerun.checkRerunOK(errorMsg)) {
-			// 無法正常執行, 印出錯誤訊息
-			System.out.println(errorMsg[0]); // 錯誤代碼
-			System.out.println(errorMsg[1]); // 錯誤中文說明(for IT)
-			System.out.println(errorMsg[2]); // Exception Content
-			System.out.println("確認失敗");
-		} else {
-			// 確認ok可以正常執行
-			System.out.println("確認OK!!");
-		}
+//		
+////		errorMsg[0] = ""; // 測試用(正式使用不須)
+//		
+//		if (!ETL_Rerun.checkRerunOK(errorMsg)) {
+//			// 無法正常執行, 印出錯誤訊息
+//			System.out.println(errorMsg[0]); // 錯誤代碼
+//			System.out.println(errorMsg[1]); // 錯誤中文說明(for IT)
+//			System.out.println(errorMsg[2]); // Exception Content
+//			System.out.println("確認失敗");
+//		} else {
+//			// 確認ok可以正常執行
+//			System.out.println("確認OK!!");
+//		}
 		
 //		String[] partiton_info = new String[3]; // 必須
 //		guery_GAML_Partition_Info("018", partiton_info);
@@ -516,22 +521,22 @@ public class ETL_Rerun {
 //			System.out.println(ary[i]);
 //		}
 		
-		String[] dateArray = new String[3];
-		dateArray[0] = "20180628";
-		dateArray[1] = "20180625";
-		dateArray[2] = "20180626";
-//		executeRerun("018", dateArray, "Tim", errorMsg);
-		
-		if (!executeRerun("018", dateArray, "Tim", errorMsg)) {
-			// 無法正常執行, 印出錯誤訊息
-			System.out.println(errorMsg[0]); // 錯誤代碼
-			System.out.println(errorMsg[1]); // 錯誤中文說明(for IT)
-			System.out.println(errorMsg[2]); // Exception Content
-			System.out.println("執行失敗");
-		} else {
-			// 確認ok可以正常執行
-			System.out.println("執行OK!!");
-		}
+//		String[] dateArray = new String[3];
+//		dateArray[0] = "20180628";
+//		dateArray[1] = "20180625";
+//		dateArray[2] = "20180626";
+////		executeRerun("018", dateArray, "Tim", errorMsg);
+//		
+//		if (!executeRerun("018", dateArray, "Tim", errorMsg)) {
+//			// 無法正常執行, 印出錯誤訊息
+//			System.out.println(errorMsg[0]); // 錯誤代碼
+//			System.out.println(errorMsg[1]); // 錯誤中文說明(for IT)
+//			System.out.println(errorMsg[2]); // Exception Content
+//			System.out.println("執行失敗");
+//		} else {
+//			// 確認ok可以正常執行
+//			System.out.println("執行OK!!");
+//		}
 		
 		/** 測試  進行ETL Rerun **/
 //		String central_No = "018";

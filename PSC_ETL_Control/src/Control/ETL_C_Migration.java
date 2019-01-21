@@ -165,8 +165,8 @@ public class ETL_C_Migration {
 		
 		if (isFormal) { // for test
 			
-			// Transaction超過一定門檻時執行reorg(產生新一代後即可能進行ETL作業, 故先進行可能的reorg)
-			ETL_C_FIVE_G.reorgTransaction(readyCentralList.get(0).getCentralNo(), beforeRecordDate);
+//			// Transaction超過一定門檻時執行reorg(產生新一代後即可能進行ETL作業, 故先進行可能的reorg)
+//			ETL_C_FIVE_G.reorgTransaction(readyCentralList.get(0).getCentralNo(), beforeRecordDate);
 			
 			// 建立新一代load rerun Table
 			if (!ETL_C_FIVE_G.generateNewGTable(beforeRecordDate, mig_record_date, readyCentralList.get(0).getCentralNo(), "RERUN")) {

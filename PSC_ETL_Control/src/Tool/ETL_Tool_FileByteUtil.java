@@ -40,54 +40,66 @@ public class ETL_Tool_FileByteUtil {
 		String theme = clazz.getSimpleName();
 
 		switch (theme) {
-		case "ETL_E_PARTY":
-			this.buffer_size = ETL_Profile.ETL_E_PARTY;
-			break;
-		case "ETL_E_PARTY_PARTY_REL":
-			this.buffer_size = ETL_Profile.ETL_E_PARTY_PARTY_REL;
-			break;
-		case "ETL_E_PARTY_PHONE":
-			this.buffer_size = ETL_Profile.ETL_E_PARTY_PHONE;
-			break;
-		case "ETL_E_PARTY_ADDRESS":
-			this.buffer_size = ETL_Profile.ETL_E_PARTY_ADDRESS;
-			break;
-		case "ETL_E_ACCOUNT":
-			this.buffer_size = ETL_Profile.ETL_E_ACCOUNT;
-			break;
-		case "ETL_E_TRANSACTION":
-			this.buffer_size = ETL_Profile.ETL_E_TRANSACTION;
-			break;
-		case "ETL_E_TRANSACTION_OLD":
-			this.buffer_size = ETL_Profile.ETL_E_TRANSACTION_OLD;
-			break;
-		case "ETL_E_LOAN_DETAIL":
-			this.buffer_size = ETL_Profile.ETL_E_LOAN_DETAIL;
-			break;
-		case "ETL_E_LOAN":
-			this.buffer_size = ETL_Profile.ETL_E_LOAN;
-			break;
-		case "ETL_E_COLLATERAL":
-			this.buffer_size = ETL_Profile.ETL_E_COLLATERAL;
-			break;
-		case "ETL_E_GUARANTOR":
-			this.buffer_size = ETL_Profile.ETL_E_GUARANTOR;
-			break;
-		case "ETL_E_FX_RATE":
-			this.buffer_size = ETL_Profile.ETL_E_FX_RATE;
-			break;
-		case "ETL_E_SERVICE":
-			this.buffer_size = ETL_Profile.ETL_E_SERVICE;
-			break;
-		case "ETL_E_TRANSFER":
-			this.buffer_size = ETL_Profile.ETL_E_TRANSFER;
-			break;
-		case "ETL_E_FCX":
-			this.buffer_size = ETL_Profile.ETL_E_FCX;
-			break;
-		case "ETL_E_CALENDAR":
-			this.buffer_size = ETL_Profile.ETL_E_CALENDAR;
-			break;
+			case "ETL_E_PARTY":
+				this.buffer_size = ETL_Profile.ETL_E_PARTY;
+				break;
+			case "ETL_E_PARTY_PARTY_REL":
+				this.buffer_size = ETL_Profile.ETL_E_PARTY_PARTY_REL;
+				break;
+			case "ETL_E_PARTY_PHONE":
+				this.buffer_size = ETL_Profile.ETL_E_PARTY_PHONE;
+				break;
+			case "ETL_E_PARTY_ADDRESS":
+				this.buffer_size = ETL_Profile.ETL_E_PARTY_ADDRESS;
+				break;
+			case "ETL_E_ACCOUNT":
+				this.buffer_size = ETL_Profile.ETL_E_ACCOUNT;
+				break;
+			case "ETL_E_TRANSACTION":
+				this.buffer_size = ETL_Profile.ETL_E_TRANSACTION;
+				break;
+			case "ETL_E_TRANSACTION_OLD":
+				this.buffer_size = ETL_Profile.ETL_E_TRANSACTION_OLD;
+				break;
+			case "ETL_E_LOAN_DETAIL":
+				this.buffer_size = ETL_Profile.ETL_E_LOAN_DETAIL;
+				break;
+			case "ETL_E_LOAN":
+				this.buffer_size = ETL_Profile.ETL_E_LOAN;
+				break;
+			case "ETL_E_COLLATERAL":
+				this.buffer_size = ETL_Profile.ETL_E_COLLATERAL;
+				break;
+			case "ETL_E_GUARANTOR":
+				this.buffer_size = ETL_Profile.ETL_E_GUARANTOR;
+				break;
+			case "ETL_E_FX_RATE":
+				this.buffer_size = ETL_Profile.ETL_E_FX_RATE;
+				break;
+			case "ETL_E_SERVICE":
+				this.buffer_size = ETL_Profile.ETL_E_SERVICE;
+				break;
+			case "ETL_E_TRANSFER":
+				this.buffer_size = ETL_Profile.ETL_E_TRANSFER;
+				break;
+			case "ETL_E_FCX":
+				this.buffer_size = ETL_Profile.ETL_E_FCX;
+				break;
+			case "ETL_E_CALENDAR":
+				this.buffer_size = ETL_Profile.ETL_E_CALENDAR;
+				break;
+			case "ETL_E_AGENT": 
+				this.buffer_size = ETL_Profile.ETL_E_AGENT; 
+				break; 
+			case "ETL_E_SCUSTBOX": 
+				this.buffer_size = ETL_Profile.ETL_E_SCUSTBOX;
+				break; 
+			case "ETL_E_SCUSTBOXOPEN": 
+				this.buffer_size = ETL_Profile.ETL_E_SCUSTBOXOPEN; 
+				break; 
+			case "ETL_E_SPARTY": 
+				this.buffer_size = ETL_Profile.ETL_E_SPARTY; 
+				break;
 		}
 	}
 

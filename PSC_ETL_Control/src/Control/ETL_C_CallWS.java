@@ -929,5 +929,171 @@ public class ETL_C_CallWS {
 		}
 		
 	}
+	
+	// 呼叫ETL Server getUploadFile, 並取得下載檔案資訊
+	public static boolean call_ETL_Server_clear_ERROR_LOG_DOWNLOAD (
+			String ip_port) {
+		
+		try {
+//			URL url = new URL("http://localhost:8083/AML_ETL/rest/UploadErrorFile/WS1");
+			System.out.println("call_ETL_Server_clear_ERROR_LOG_DOWNLOAD : 開始執行");
+
+			String urlStr = "http://" + ip_port + "/AML_ETL/rest/UploadErrorFile/WS1?";
+			urlStr = urlStr + "action=clear";
+			
+			System.out.println("urlStr = " + urlStr);
+			URL url = new URL(urlStr);
+			
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+//			conn.setRequestProperty("Accept", "application/json");
+			conn.setRequestProperty("Accept", "application/xml");
+
+			if (conn.getResponseCode() != 200) {
+				throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
+			}
+
+			BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+
+			System.out.println("Output from Server .... \n");
+			
+			boolean exeReault = false;
+			
+			String outputStr; // WebService輸出字串  XML格式
+			while ((outputStr = br.readLine()) != null) {
+				InputStream is = new ByteArrayInputStream(outputStr.getBytes("UTF-8"));
+				SAXReader reader = new SAXReader();
+				Document document = reader.read(is);
+				Element root = document.getRootElement();
+				
+				Element msg = root.element("msg");
+				if (msg != null) {
+					String msgText = msg.getTextTrim();
+					System.out.println("msg = " + msgText);
+					
+					if ("SUCCESS".equals(msgText)) {
+						exeReault = true;
+					} else if ("FAILURE".equals(msgText)) {
+						
+						String errorMessage = "";
+						Element errorMsg = root.element("errorMsg");
+						if (errorMsg != null) {
+							String errorMsgText = errorMsg.getTextTrim();
+							errorMessage = "發生錯誤:" + errorMsgText;
+						}
+						System.out.println(errorMessage);
+						
+						exeReault = false;
+					};
+					
+				} else {
+					System.out.println("root has no element names msg");
+				}
+			}
+			
+			conn.disconnect();
+			
+			System.out.println("call_ETL_Server_clear_ERROR_LOG_DOWNLOAD : 執行成功！");
+			
+			return exeReault;
+
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+			System.out.println("call_ETL_Server_clear_ERROR_LOG_DOWNLOAD : 發生錯誤");
+			return false;
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.out.println("call_ETL_Server_clear_ERROR_LOG_DOWNLOAD : 發生錯誤");
+			return false;
+		} catch (DocumentException e) {
+			e.printStackTrace();
+			System.out.println("call_ETL_Server_clear_ERROR_LOG_DOWNLOAD : 發生錯誤");
+			return false;
+		}
+	}
+	
+	// 呼叫ETL Server getUploadFile, 並取得下載檔案資訊
+	public static boolean call_ETL_Server_write_ERROR_LOG_DOWNLOAD (
+			String ip_port, String rerunRecordDate, String centralNo,  String uploadNo) {
+		
+		try {
+//			URL url = new URL("http://localhost:8083/AML_ETL/rest/UploadErrorFile/WS2");
+			System.out.println("call_ETL_Server_write_ERROR_LOG_DOWNLOAD : 開始執行");
+
+			String urlStr = "http://" + ip_port + "/AML_ETL/rest/UploadErrorFile/WS2?";
+			urlStr = urlStr + "recordDateStr=" + rerunRecordDate;
+			urlStr = urlStr + "&centralNo=" + centralNo;
+			urlStr = urlStr + "&uploadNo=" + uploadNo;
+			
+			System.out.println("urlStr = " + urlStr);
+			URL url = new URL(urlStr);
+			
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+//			conn.setRequestProperty("Accept", "application/json");
+			conn.setRequestProperty("Accept", "application/xml");
+
+			if (conn.getResponseCode() != 200) {
+				throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
+			}
+
+			BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+
+			System.out.println("Output from Server .... \n");
+			
+			boolean exeReault = false;
+			
+			String outputStr; // WebService輸出字串  XML格式
+			while ((outputStr = br.readLine()) != null) {
+				InputStream is = new ByteArrayInputStream(outputStr.getBytes("UTF-8"));
+				SAXReader reader = new SAXReader();
+				Document document = reader.read(is);
+				Element root = document.getRootElement();
+				
+				Element msg = root.element("msg");
+				if (msg != null) {
+					String msgText = msg.getTextTrim();
+					System.out.println("msg = " + msgText);
+					
+					if ("SUCCESS".equals(msgText)) {
+						exeReault = true;
+					} else if ("FAILURE".equals(msgText)) {
+						
+						String errorMessage = "";
+						Element errorMsg = root.element("errorMsg");
+						if (errorMsg != null) {
+							String errorMsgText = errorMsg.getTextTrim();
+							errorMessage = "發生錯誤:" + errorMsgText;
+						}
+						System.out.println(errorMessage);
+						
+						exeReault = false;
+					};
+					
+				} else {
+					System.out.println("root has no element names msg");
+				}
+			}
+			
+			conn.disconnect();
+			
+			System.out.println("call_ETL_Server_write_ERROR_LOG_DOWNLOAD : 執行成功！");
+			
+			return exeReault;
+
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+			System.out.println("call_ETL_Server_write_ERROR_LOG_DOWNLOAD : 發生錯誤");
+			return false;
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.out.println("call_ETL_Server_write_ERROR_LOG_DOWNLOAD : 發生錯誤");
+			return false;
+		} catch (DocumentException e) {
+			e.printStackTrace();
+			System.out.println("call_ETL_Server_write_ERROR_LOG_DOWNLOAD : 發生錯誤");
+			return false;
+		}
+	}
 
 }

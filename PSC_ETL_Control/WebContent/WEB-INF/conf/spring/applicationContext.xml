@@ -150,7 +150,7 @@
 			<ref bean="MappingDataReceiver" />
 		</property>
 		<property name="cronExpression">
-			<value>0 * * * * ?</value>
+			<value>0 0/3 * * * ?</value>
 		</property>
 	</bean>
 	
@@ -258,6 +258,26 @@
 		</property>
 	</bean>
 	
+	<!-- 資料表維護   -->
+  	<bean id="MaintainCheckScehdule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<bean id="MaintainCheck" class="Control.ETL_C_Maintain">
+			</bean>
+		</property>
+		<property name="targetMethod">
+			<value>execute</value>
+		</property>
+	</bean>
+	 
+	<bean id="MaintainCheckTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="MaintainCheckScehdule" />
+		</property>
+		<property name="cronExpression">
+			<value>0 0 22 ? * MON-FRI</value>
+		</property>
+	</bean>
+	
 	<!-- 批次作業 -->
 	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
@@ -273,6 +293,7 @@
 				<ref local="NoonSupervisionTrigger" /><!-- ETL 中午監控   -->
 				<ref local="RelevanceCheckTrigger" /><!-- 關聯性驗證   -->
 				<ref local="VerificationCheckTrigger" /><!-- 資料驗證檢查   -->
+				<ref local="MaintainCheckTrigger" /><!-- 資料表維護  -->
 			</list>
 		</property>
 	</bean>

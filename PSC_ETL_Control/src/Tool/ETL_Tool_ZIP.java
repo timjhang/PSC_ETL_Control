@@ -5,22 +5,34 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.List;
 
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.io.ZipInputStream;
 import net.lingala.zip4j.model.FileHeader;
+import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.unzip.UnzipUtil;
+import net.lingala.zip4j.util.Zip4jConstants;
 
 public class ETL_Tool_ZIP {
 	
 	public static void main(String[] args) throws IOException {
 		
-		String zipPath = "C:\\test2\\ZIP\\123.zip";
-		String descDir = "C:\\test2\\ZIP";
+		String zipPath = "C:\\Users\\10404003\\Desktop\\農金\\2018\\181107\\test2\\AML_TR_600_20181005001.zip";
+		String descDir = "C:\\Users\\10404003\\Desktop\\農金\\2018\\181107\\test2\\AML_TR_600_20181005001\\";
 		
-		ETL_Tool_ZIP.extractZipFiles(zipPath, descDir, "5566");
+		ETL_Tool_ZIP.extractZipFiles(zipPath, descDir, "d1fa8edf36");
+		
+//		//檔案進行更名
+//		if (renameMigrationFiles(descDir)) {
+//			System.out.println(descDir + "  內檔案去  \"TR_\"  結束!");
+//		} else {
+//			System.out.println(descDir + "  內檔案去  \"TR_\"  失敗!");
+//		}
 		
 	}
 	
@@ -29,6 +41,10 @@ public class ETL_Tool_ZIP {
     public static boolean extractZipFiles(String zipPath, String descDir, String password) {
         ZipInputStream is = null;
         OutputStream os = null;
+        
+        List<ZipInputStream> isList = new ArrayList<ZipInputStream>();
+        List<OutputStream> osList = new ArrayList<OutputStream>();
+        
         try {
             ZipFile zipFile = new ZipFile(zipPath);
             
@@ -78,8 +94,11 @@ public class ETL_Tool_ZIP {
                         os.write(buff, 0, readLen);
                     }
                     
-                    // 使用完畢關閉變數
-                    closeFileHandlers(is, os);
+//                    // 使用完畢關閉變數
+//                    closeFileHandlers(is, os);
+                    // 加入is, os List 待處理後關閉連線
+                    isList.add(is);
+                    osList.add(os);
                     
                     UnzipUtil.applyFileAttributes(fileHeader, outFile);
                     System.out.println("Done extracting: " + fileHeader.getFileName());
@@ -89,24 +108,79 @@ public class ETL_Tool_ZIP {
             }
             
             return true;
-        } catch (ZipException e) {
-            e.printStackTrace();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (ZipException ex) {
+        	ex.printStackTrace();
+            StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			System.out.println("ExceptionMassage:" + sw.toString());
+        } catch (FileNotFoundException ex) {
+        	ex.printStackTrace();
+            StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			System.out.println("ExceptionMassage:" + sw.toString());
+        } catch (IOException ex) {
+        	ex.printStackTrace();
+            StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			System.out.println("ExceptionMassage:" + sw.toString());
+        } catch (Exception ex) {
+        	ex.printStackTrace();
+            StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			System.out.println("ExceptionMassage:" + sw.toString());
         } finally {
-            try {
-                closeFileHandlers(is, os);
-            } catch (IOException e) {
-//                e.printStackTrace();
+        	// 使用完畢關閉變數
+        	for (int i = 0; i < isList.size(); i++) {
+        		try {
+        			closeFileHandlers(isList.get(i), osList.get(i));
+            	} catch (Exception ex) {
+//              	ex.printStackTrace();
+            	}
             }
         }
         
         return false;
     }
+    
+    /**
+     * 
+     * @param files	 為要壓縮的 file List
+     * @param zipFilePath 壓縮後的zip絕對路徑
+     * @param adPW	壓縮的密碼
+     * @return	壓縮後的zip File
+     * 
+     */
+	public static File toZip(ArrayList<File> files, String zipFilePath, String adPW) {
+		ZipParameters parameters = new ZipParameters();
+		ZipFile zipFile;
+		try {
+			zipFile = new ZipFile(zipFilePath);
+
+			parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
+			parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_NORMAL);
+			parameters.setEncryptionMethod(Zip4jConstants.ENC_METHOD_AES);
+			parameters.setAesKeyStrength(Zip4jConstants.AES_STRENGTH_256);
+			parameters.setEncryptFiles(true);
+			parameters.setPassword(adPW);
+
+			zipFile.addFiles(files, parameters);
+
+			return zipFile.getFile();
+
+		} catch (ZipException ex) {
+			ex.printStackTrace();
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			System.out.println("ExceptionMassage:" + sw.toString());
+			return null;
+		}
+
+	}
 
     private static void closeFileHandlers(ZipInputStream is, OutputStream os)
             throws IOException {
