@@ -146,6 +146,10 @@ public class ETL_Profile {
 	public final static int ETL_E_TRANSFER = 361;
 	public final static int ETL_E_FCX = 125;
 	public final static int ETL_E_CALENDAR = 11;
+	public final static int ETL_E_AGENT = 85;
+	public final static int ETL_E_SCUSTBOX = 30;
+	public final static int ETL_E_SCUSTBOXOPEN =379;
+	public final static int ETL_E_SPARTY = 180;
 
 	// 讀檔筆數域值
 	public final static int ETL_E_Stage = 10000;
@@ -160,14 +164,14 @@ public class ETL_Profile {
 //			ETL_Tool_DES.decrypt("021d9d8f41af834dbbd0cc67793869649ee8d199407624c0");
 	
 	// EMail 設定參數
-	public final static String EMAIL_SERVER_HOST = ETL_Tool_DES.decrypt("4ac3ce9609e110fee69d06fd1ec8c823");
-	public final static int EMAIL_SERVER_PORT = Integer.parseInt(ETL_Tool_DES.decrypt("f8359cb46aebc26d"));
+	public final static String EMAIL_SERVER_HOST = "172.17.16.140";
+	public final static int EMAIL_SERVER_PORT = 25;
 	public final static String EMAIL_SERVER_ADDRESS ="AML_ETL@agribank.com";
 	
 	// ETL Server設定參數
-	public final static String ETL_db2User = "Administrator";
-	public final static String ETL_db2Password = "9ol.)P:?";
-	public final static String db2ETLTableSchema = "Administrator";
+	public final static String ETL_db2User = "ETLUSR";
+	public final static String ETL_db2Password = "1qazXSW@";
+	public final static String db2ETLTableSchema = "ETLUSR";
 //	public final static String db2UrlETLpre1 = "jdbc:db2://172.18.6.151:50000/ETLDB";
 	public final static String db2UrlETLpre1 = "jdbc:db2://172.18.21.206:50000/ETLDB";
 	public final static String db2UrlETLpre2 = "jdbc:db2://172.18.6.152:50000/ETLDB";

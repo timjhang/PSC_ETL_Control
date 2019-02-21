@@ -47,5 +47,11 @@ public class ETL_C_MailSender {
 		System.out.println("####ETL_C_MailSender 寄發通知信  End " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
 		
 	}
+	
+	public static void main(String[] argvs) {
+		System.out.println("測試開始  " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+		new ETL_C_MailSender().execute();
+		System.out.println("測試結束  " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
+	}
 
 }

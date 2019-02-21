@@ -1,5 +1,7 @@
 package Tool;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -24,6 +26,7 @@ import javax.mail.internet.MimeMessage;
 import com.ibm.db2.jcc.DB2Types;
 
 import Bean.ETL_Bean_MailFilter;
+import Bean.ETL_Bean_MailReceiveUnit;
 import DB.ConnectionHelper;
 import Profile.ETL_Profile;
 
@@ -66,6 +69,10 @@ public class ETL_Tool_Mail {
 
 		} catch (MessagingException ex) {
 			ex.printStackTrace();
+			StringWriter sw = new StringWriter(); 
+			PrintWriter pw = new PrintWriter(sw); 
+			ex.printStackTrace(pw); 
+			System.out.println("ExceptionMassage:" + sw.toString());
 			return false;
 		}
 
@@ -148,6 +155,10 @@ public class ETL_Tool_Mail {
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			StringWriter sw = new StringWriter(); 
+			PrintWriter pw = new PrintWriter(sw); 
+			ex.printStackTrace(pw); 
+			System.out.println("ExceptionMassage:" + sw.toString());
 		} finally {
 			try {
 				// 資源後開,先關
@@ -162,8 +173,12 @@ public class ETL_Tool_Mail {
 					rs.close();
 				}
 
-			} catch (SQLException e) {
-				e.printStackTrace();
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+				StringWriter sw = new StringWriter(); 
+				PrintWriter pw = new PrintWriter(sw); 
+				ex.printStackTrace(pw); 
+				System.out.println("ExceptionMassage:" + sw.toString());
 			}
 
 		}
@@ -323,6 +338,10 @@ public class ETL_Tool_Mail {
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			StringWriter sw = new StringWriter(); 
+			PrintWriter pw = new PrintWriter(sw); 
+			ex.printStackTrace(pw); 
+			System.out.println("ExceptionMassage:" + sw.toString());
 		} finally {
 			try {
 				// 資源後開,先關
@@ -337,8 +356,12 @@ public class ETL_Tool_Mail {
 					rs.close();
 				}
 
-			} catch (SQLException e) {
-				e.printStackTrace();
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+				StringWriter sw = new StringWriter(); 
+				PrintWriter pw = new PrintWriter(sw); 
+				ex.printStackTrace(pw); 
+				System.out.println("ExceptionMassage:" + sw.toString());
 			}
 		}
 		
@@ -421,6 +444,10 @@ public class ETL_Tool_Mail {
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			StringWriter sw = new StringWriter(); 
+			PrintWriter pw = new PrintWriter(sw); 
+			ex.printStackTrace(pw); 
+			System.out.println("ExceptionMassage:" + sw.toString());
 		} finally {
 			try {
 				// 資源後開,先關
@@ -435,8 +462,12 @@ public class ETL_Tool_Mail {
 					rs.close();
 				}
 
-			} catch (SQLException e) {
-				e.printStackTrace();
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+				StringWriter sw = new StringWriter(); 
+				PrintWriter pw = new PrintWriter(sw); 
+				ex.printStackTrace(pw); 
+				System.out.println("ExceptionMassage:" + sw.toString());
 			}
 		}
 		
@@ -477,6 +508,10 @@ public class ETL_Tool_Mail {
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			StringWriter sw = new StringWriter(); 
+			PrintWriter pw = new PrintWriter(sw); 
+			ex.printStackTrace(pw); 
+			System.out.println("ExceptionMassage:" + sw.toString());
 		} finally {
 			try {
 				// 資源後開,先關
@@ -491,13 +526,17 @@ public class ETL_Tool_Mail {
 					rs.close();
 				}
 
-			} catch (SQLException e) {
-				e.printStackTrace();
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+				StringWriter sw = new StringWriter(); 
+				PrintWriter pw = new PrintWriter(sw); 
+				ex.printStackTrace(pw); 
+				System.out.println("ExceptionMassage:" + sw.toString());
 			}
 		}
 	}
 	
-	// 寫入AML寄件Table
+	// 寫入AML寄件Table(一般ETL發信中心OP及相關人員用, 其他不建議使用)
 	public static boolean writeAML_Mail(String receiveUnit, String ccUnit, String bccUnit, String subject, String Content) {
 		CallableStatement cstmt = null;
 		java.sql.ResultSet rs = null;
@@ -567,6 +606,10 @@ public class ETL_Tool_Mail {
 			return true;
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			StringWriter sw = new StringWriter(); 
+			PrintWriter pw = new PrintWriter(sw); 
+			ex.printStackTrace(pw); 
+			System.out.println("ExceptionMassage:" + sw.toString());
 			return false;
 		} finally {
 			try {
@@ -582,10 +625,105 @@ public class ETL_Tool_Mail {
 					rs.close();
 				}
 
-			} catch (SQLException e) {
-				e.printStackTrace();
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+				StringWriter sw = new StringWriter(); 
+				PrintWriter pw = new PrintWriter(sw); 
+				ex.printStackTrace(pw); 
+				System.out.println("ExceptionMassage:" + sw.toString());
 			}
 		}
+	}
+	
+	// 寫入AML寄件Table(物件傳遞版, 特別關係人設定用版本)
+	public static boolean writeAML_Mail(
+			ETL_Bean_MailReceiveUnit receiveUnit, ETL_Bean_MailReceiveUnit ccUnit, ETL_Bean_MailReceiveUnit bccUnit,
+			String subject, String Content) {
+		
+		CallableStatement cstmt = null;
+		java.sql.ResultSet rs = null;
+		Connection con = null;
+		
+		try {
+
+			String sql = "{call " + ETL_Profile.db2TableSchema + ".AML_EMAIL.insertAML_Mails(?,?,?,?,?,?,?)}";
+//			String sql = "{call " + ETL_Profile.GAML_db2TableSchema + ".AML_EMAIL.insertAML_Mails(?,?,?,?,?,?,?)}"; // for test
+
+			// 系統收件者
+			List<String> receiveList = new ArrayList<String>();
+			if (receiveUnit != null) {
+				receiveList = getUnitMails(receiveUnit.getMail_type(), receiveUnit.getType_value());
+			}
+			String receiveListArray = getMailString(receiveList);
+			
+			// cc收件者
+			List<String> ccList = new ArrayList<String>();
+			if (ccUnit != null) {
+				ccList = getUnitMails(ccUnit.getMail_type(), ccUnit.getType_value());
+			}
+			String ccListArray = getMailString(ccList);
+			
+			// bcc收件者
+			List<String> bccList = new ArrayList<String>();
+			if (bccUnit != null) {
+				bccList = getUnitMails(bccUnit.getMail_type(), bccUnit.getType_value());
+			}
+			String bccListArray = getMailString(bccList);
+			
+			con = ConnectionHelper.getDB2Connection();
+//			con = ConnectionHelper.getDB2ConnGAML("DB"); // for test
+			cstmt = con.prepareCall(sql);
+
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setString(2, receiveListArray);
+			cstmt.setString(3, ccListArray);
+			cstmt.setString(4, bccListArray);
+			cstmt.setString(5, subject);
+			cstmt.setString(6, Content);
+			cstmt.registerOutParameter(7, Types.VARCHAR);
+
+			cstmt.execute();
+
+			int returnCode = cstmt.getInt(1);
+
+			// 有錯誤釋出錯誤訊息 不往下繼續進行
+			if (returnCode != 0) {
+				String errorMessage = cstmt.getString(7);
+				System.out.println("Error Code = " + returnCode + ", Error Message : " + errorMessage);
+				return false;
+			}
+
+			return true;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			StringWriter sw = new StringWriter(); 
+			PrintWriter pw = new PrintWriter(sw); 
+			ex.printStackTrace(pw); 
+			System.out.println("ExceptionMassage:" + sw.toString());
+			return false;
+		} finally {
+			try {
+				// 資源後開,先關
+				if (cstmt != null) {
+					cstmt.close();
+				}
+				if (con != null) {
+					con.close();
+				}
+
+				if (rs != null) {
+					rs.close();
+				}
+
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+				StringWriter sw = new StringWriter(); 
+				PrintWriter pw = new PrintWriter(sw); 
+				ex.printStackTrace(pw); 
+				System.out.println("ExceptionMassage:" + sw.toString());
+			}
+		}
+		
 	}
 
 	public static void main(String args[]) throws AddressException {

@@ -40,7 +40,7 @@ public class ETL_C_Maintain {
 //		centralList.add("605");
 		centralList.add("910");
 		centralList.add("928");
-		centralList.add("951");
+//		centralList.add("951");
 		centralList.add("952");
 		
 		// 讀取是否啟動維護參數

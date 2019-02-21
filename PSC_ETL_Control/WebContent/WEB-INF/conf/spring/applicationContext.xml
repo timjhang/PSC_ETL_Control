@@ -278,6 +278,26 @@
 		</property>
 	</bean>
 	
+	<!-- 資料關聯檢核通知   -->
+  	<bean id="RelCheckNoticeScehdule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<bean id="RelCheckNotice" class="Control.ETL_C_RelCheck_Notice">
+			</bean>
+		</property>
+		<property name="targetMethod">
+			<value>execute</value>
+		</property>
+	</bean>
+	 
+	<bean id="RelCheckNoticeTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="RelCheckNoticeScehdule" />
+		</property>
+		<property name="cronExpression">
+			<value>0 0 15 ? * WED</value>
+		</property>
+	</bean>
+	
 	<!-- 批次作業 -->
 	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
@@ -294,6 +314,7 @@
 				<ref local="RelevanceCheckTrigger" /><!-- 關聯性驗證   -->
 				<ref local="VerificationCheckTrigger" /><!-- 資料驗證檢查   -->
 				<ref local="MaintainCheckTrigger" /><!-- 資料表維護  -->
+				<ref local="RelCheckNoticeTrigger" /><!-- 資料關聯檢核通知  -->
 			</list>
 		</property>
 	</bean>

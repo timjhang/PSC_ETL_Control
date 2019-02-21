@@ -1052,6 +1052,9 @@ public class ETL_C_PROCESS {
 			
 			// 擔保品, 保證人檔對party進行補漏作業
 			ETL_C_Comm.SupplementParty(logData, fedServer, runTable);
+			
+			// 修正代理人寫入party檔Branch Code
+			ETL_C_Comm.ModifyPartyBranchCodeFromAgent(logData, fedServer, runTable);
 
 		} catch (Exception ex) {
 			System.out.println("call_ETL_Server_Lfunction : 發生錯誤");
