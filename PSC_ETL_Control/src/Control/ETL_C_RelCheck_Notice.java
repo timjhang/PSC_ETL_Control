@@ -86,7 +86,7 @@ public class ETL_C_RelCheck_Notice {
 	}
 	
 	// 取得運行中心  及  最後完成ETL資料日期
-	private static List<ETL_Bean_LogData> getRelCheckOver_CentralList(Date record_date) {
+	public static List<ETL_Bean_LogData> getRelCheckOver_CentralList(Date record_date) {
 		CallableStatement cstmt = null;
 		java.sql.ResultSet rs = null;
 		Connection con = null;

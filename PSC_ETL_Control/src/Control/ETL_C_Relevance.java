@@ -97,7 +97,7 @@ public class ETL_C_Relevance {
 	}
 	
 	// 取得所有進行中心
-	public static List<String> getRunCentrlList() {
+	private static List<String> getRunCentrlList() {
 		List<String> resultList = new ArrayList<String>();
 		
 		try {

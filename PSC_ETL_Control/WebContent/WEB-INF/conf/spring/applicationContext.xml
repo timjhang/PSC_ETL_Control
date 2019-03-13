@@ -298,6 +298,26 @@
 		</property>
 	</bean>
 	
+	<!-- 刪除中心舊交易性資料   -->
+  	<bean id="DeleteOldTransactionScehdule" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<bean id="DeleteOldTransaction" class="Control.ETL_C_DelOldTransaction">
+			</bean>
+		</property>
+		<property name="targetMethod">
+			<value>execute</value>
+		</property>
+	</bean>
+	 
+	<bean id="DeleteOldTransactionTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="DeleteOldTransactionScehdule" />
+		</property>
+		<property name="cronExpression">
+			<value>0 0 1 ? * WED</value>
+		</property>
+	</bean>
+	
 	<!-- 批次作業 -->
 	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
@@ -315,6 +335,7 @@
 				<ref local="VerificationCheckTrigger" /><!-- 資料驗證檢查   -->
 				<ref local="MaintainCheckTrigger" /><!-- 資料表維護  -->
 				<ref local="RelCheckNoticeTrigger" /><!-- 資料關聯檢核通知  -->
+				<ref local="DeleteOldTransactionTrigger" /><!-- 刪除中心舊交易性資料   -->
 			</list>
 		</property>
 	</bean>
