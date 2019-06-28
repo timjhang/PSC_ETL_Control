@@ -7,11 +7,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.sql.Types;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import Bean.ETL_Bean_LogData;
 import DB.ConnectionHelper;
 import Profile.ETL_Profile;
 import Tool.ETL_Tool_CastObjUtil;
+import Tool.ETL_Tool_StringX;
 
 public class ETL_C_Comm {
 	
@@ -158,18 +161,25 @@ public class ETL_C_Comm {
 
 	public static void main(String[] args) {
 		
-		System.out.println("測試開始  Start");
+		System.out.println("測試開始  Start " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
 		
-//		ETL_Bean_LogData logData = new ETL_Bean_LogData();
-//		logData.setCENTRAL_NO("018");
-//		
-////		SupplementParty(logData, null, "TEMP");
-//		ModifyPartyBranchCodeFromAgent(logData, "ETLDB001", "RERUN");
+		try {
 		
-		String result = getGAMLDB_Profile(1);
-		System.out.println("result = " + result);
+			ETL_Bean_LogData logData = new ETL_Bean_LogData();
+			logData.setCENTRAL_NO("018");
+			logData.setRECORD_DATE(ETL_Tool_StringX.toUtilDate("20190222"));
+			
+	//		SupplementParty(logData, null, "TEMP");
+			ModifyPartyBranchCodeFromAgent(logData, "ETLDB001", "temp");
+			
+	//		String result = getGAMLDB_Profile(1);
+	//		System.out.println("result = " + result);
 		
-		System.out.println("測試結束  End");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+		System.out.println("測試結束  End " + new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()));
 
 	}
 
